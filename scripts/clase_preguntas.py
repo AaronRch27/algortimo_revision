@@ -70,32 +70,37 @@ class clase_pregunta():
             bus = ['1.', '1. ', '01.', '01. ']
             comprobador = []
             val = {}
-            print(nuevo_df.head())
-            try:
-                for uno in bus:    
-                    if uno in nuevo_df['Unnamed: 2'].values:
-                        comprobador.append(1)
-                        c = 0
-                        index = 0
-                        for fila in nuevo_df['Unnamed: 2'].values:
-                            if uno in str(fila):
-                                index = c
-                                break
-                            c += 1
-                        
-                        for col in nuevo_df:
-                            ap = list(nuevo_df[col])
-                            val[ap[index-1]] = ap[index:]
-                        
-                        nuevo_df = pd.DataFrame(val)
-                if not comprobador: #tabla de filas unicas
+            print(nuevo_df.columns)
+            # try:
+            for uno in bus:
+                if comprobador: #no tiene caso que se siga iterando si ya lo encontró
+                    break
+                
+                if uno in nuevo_df['Unnamed: 2'].values:
+                    
+                    comprobador.append(1)
+                    c = 0
+                    index = 0
+                    for fila in nuevo_df['Unnamed: 2'].values:
+                        if uno in str(fila):
+                            index = c
+                            break
+                        c += 1
+                    
                     for col in nuevo_df:
+                        #aqui se mete el proceso para los nombres de columnas
                         ap = list(nuevo_df[col])
-                        val[ap[-2]] = [ap[-1]]
+                        val[ap[index-1]] = ap[index:]
                     
                     nuevo_df = pd.DataFrame(val)
-            except:
-                print('algun error con el unnamed 2')
+            if not comprobador: #tabla de filas unicas
+                for col in nuevo_df:
+                    ap = list(nuevo_df[col])
+                    val[ap[-2]] = [ap[-1]]
+                
+                nuevo_df = pd.DataFrame(val)
+            # except:
+            #     print('algun error con el unnamed 2')
                     
         return nuevo_df
     
