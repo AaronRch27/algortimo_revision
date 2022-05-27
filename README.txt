@@ -1,0 +1,1 @@
+Por cuestiones de seguridad, la carpeta de cuestionarios estará vacía. Esos documentos solo se comparten por medios institucionales.
