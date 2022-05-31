@@ -8,34 +8,34 @@ import pandas as pd
 
 
 class clase_pregunta():
-    
+   
     def __init__(self,dataframe,seccion):
         self.nombre_lit = dataframe.iat[0,0]
         borrar = '.- '
-        self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar) 
+        self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
         self.dfraw = dataframe
         self.tabla = clase_pregunta.tabla(dataframe)
         # self.metadata = metadata
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
         # self.seccion = seccion
-        
+       
     def clas_instru(instrucciones):
         #Aquí irá el modelo de clasifiacion
         dic = {'texto':instrucciones,'clas':[]}
         return dic
-    
+   
     def clas_tipo(df):
         #aqui modelo de clasificación de pregunta tipo analizarcoor
         return 'desconocido'
-    
+   
     def tabla(df):
         """
-        
+       
 
         Parameters
         ----------
-        df : DataFrame pandas. 
+        df : DataFrame pandas.
 
         Returns
         -------
@@ -54,8 +54,8 @@ class clase_pregunta():
             c += 1
         mayor = max(columnas)
         nuevo_df = clase_pregunta.borrar_col(df)
-        #Aqui debe ir iteracion para más de una tabla 
-        
+        #Aqui debe ir iteracion para más de una tabla
+       
         if mayor > 15: #Se trata de una tabla
             colyfil = clase_pregunta.imagen(nuevo_df)
             espacios = clase_pregunta.distancia(colyfil['fila'],1) #forzozamente debe arrojar al menos dos numeros dentro de la lista
@@ -65,19 +65,19 @@ class clase_pregunta():
             nuevo_df = nuevo_df.drop(['Unnamed: 0','Unnamed: 1'],axis=1)
             nuevo_df = clase_pregunta.borrar_col(nuevo_df)
             # print(colyfil,espacios,inf,sup)
-            
+           
             #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
             bus = ['1.', '1. ', '01.', '01. ']
             comprobador = []
             val = {}
-            print(nuevo_df.columns)
+            
             # try:
             for uno in bus:
                 if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                     break
-                
+               
                 if uno in nuevo_df['Unnamed: 2'].values:
-                    
+                   
                     comprobador.append(1)
                     c = 0
                     index = 0
@@ -86,24 +86,60 @@ class clase_pregunta():
                             index = c
                             break
                         c += 1
-                    
+                    nuevo_df = nuevo_df.fillna('borra')
+                    nombres = []
                     for col in nuevo_df:
                         #aqui se mete el proceso para los nombres de columnas
                         ap = list(nuevo_df[col])
-                        val[ap[index-1]] = ap[index:]
-                    
+                        nnn = []
+                        condicion = 0
+                        # print(ap[0])
+                        if ap[0] != 'borra':
+                            for filaN in ap[0:index]:
+                                if filaN != 'borra':
+                                    nnn.append(filaN)
+                        if nnn:
+                            # print(nnn)
+                            nombres = nnn
+                        if not nombres:
+                            nombre = str(ap[index-1])
+                       
+                        if nombres:
+                            if len(nombres) > 1:
+                                if ap[index-1] == 'borra':
+                                    nombre = [str(n) for n in nombres[0:-1]]
+                                    condicion = 'juntar'
+                                else:
+                                    nombre = [str(n) for n in nombres[0:-1]]+[ap[index-1]]
+                            else:
+                                nombre = str(nombres[0])
+                            print(nombre)
+                            nombre = [str(n) for n in nombre]
+                            nombre = ' '.join(nombre)
+                        # print(nombre,nombres)
+                        if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
+                            ind = 0
+                            nl = []
+                            for elem in val[nombre]:
+                                nl.append(str(elem) + ' '+ str(ap[index:][ind]))
+                                ind += 1
+                            val[nombre] = nl
+                        if nombre not in val:
+                           
+                            val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
+                   
                     nuevo_df = pd.DataFrame(val)
             if not comprobador: #tabla de filas unicas
                 for col in nuevo_df:
                     ap = list(nuevo_df[col])
                     val[ap[-2]] = [ap[-1]]
-                
+               
                 nuevo_df = pd.DataFrame(val)
             # except:
             #     print('algun error con el unnamed 2')
-                    
+                   
         return nuevo_df
-    
+   
     @staticmethod
     def borrar_col(df):
         df = df.reset_index(drop=True)
@@ -117,23 +153,23 @@ class clase_pregunta():
         # nuevo_df = nuevo_df.drop([1], axis=0)
         nuevo_df = nuevo_df.reset_index(drop=True)
         return nuevo_df
-        
+       
     @staticmethod
     def distancia(lista,nfilas):
         """
-        
-    
+       
+   
         Parameters
         ----------
         lista : list. Lista con numeros
         nfilas : int. La distancia o diferencia a medir
-    
+   
         Returns
         -------
-        li : list. Regresa una lista con los indices de la lista de entrada en donde se cumple la diferencia señalada 
-    
+        li : list. Regresa una lista con los indices de la lista de entrada en donde se cumple la diferencia señalada
+   
         """
-        
+       
         li = []
         con = 0
         for i in lista:
@@ -145,23 +181,23 @@ class clase_pregunta():
                 li.append(con)
             con+=1
         return li
-    
+   
     @staticmethod
     def imagen(df):
         """
-        
-    
+       
+   
         Parameters
         ----------
         df : DataFrame
-    
+   
         Returns
         -------
-        ente : (dict).genera un diccionario con filas y columnas en los que se 
+        ente : (dict).genera un diccionario con filas y columnas en los que se
         registra un valor de la pregunta
-    
+   
         """
-      
+     
         sa = pd.isna(df)
         listas = sa.to_numpy().tolist()
         cont = 0
@@ -176,7 +212,10 @@ class clase_pregunta():
                     pass
                 vo+=1
             cont+=1
-        
-        return entot   
+       
+        return entot  
+
+
+
 
 
