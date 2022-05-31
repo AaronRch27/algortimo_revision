@@ -5,7 +5,7 @@ Created on Wed Apr 27 14:29:53 2022
 @author: AARON.RAMIREZ
 """
 import pandas as pd
-
+import numpy as np
 
 class clase_pregunta():
    
@@ -14,7 +14,7 @@ class clase_pregunta():
         borrar = '.- '
         self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
         self.dfraw = dataframe
-        self.tabla = clase_pregunta.tabla(dataframe)
+        self.tabla = clase_pregunta.tabla(self,dataframe)
         # self.metadata = metadata
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
@@ -29,7 +29,7 @@ class clase_pregunta():
         #aqui modelo de clasificación de pregunta tipo analizarcoor
         return 'desconocido'
    
-    def tabla(df):
+    def tabla(self,df):
         """
        
 
@@ -45,6 +45,9 @@ class clase_pregunta():
                     diccionario con df para cada tabla.
 
         """
+        #comienza con proceso de detectar tabla por partes para juntarlo todo en una sola
+        df = clase_pregunta.tabla_partes(df)
+        self.rawer = df
         na = pd.isna(df)
         columnas = []
         c = 0
@@ -71,7 +74,7 @@ class clase_pregunta():
             comprobador = []
             val = {}
             
-            # try:
+            
             for uno in bus:
                 if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                     break
@@ -113,7 +116,7 @@ class clase_pregunta():
                                     nombre = [str(n) for n in nombres[0:-1]]+[ap[index-1]]
                             else:
                                 nombre = str(nombres[0])
-                            print(nombre)
+                            
                             nombre = [str(n) for n in nombre]
                             nombre = ' '.join(nombre)
                         # print(nombre,nombres)
@@ -130,13 +133,48 @@ class clase_pregunta():
                    
                     nuevo_df = pd.DataFrame(val)
             if not comprobador: #tabla de filas unicas
+                nuevo_df = nuevo_df.fillna('borra')
+                nombres = []
                 for col in nuevo_df:
                     ap = list(nuevo_df[col])
-                    val[ap[-2]] = [ap[-1]]
+                    nnn = []
+                    condicion = 0
+                    # print(ap[0])
+                    if ap[0] != 'borra':
+                        for filaN in ap[0:-1]:
+                            if filaN != 'borra':
+                                nnn.append(filaN)
+                    if nnn:
+                        
+                        nombres = nnn
+                    if not nombres:
+                        nombre = str(ap[-2])
+                   
+                    if nombres:
+                        if len(nombres) > 1:
+                            if ap[-1] == 'borra':
+                                nombre = [str(n) for n in nombres[0:-1]]
+                                condicion = 'juntar'
+                            else:
+                                nombre = [str(n) for n in nombres[0:-1]]+[ap[-2]]
+                        else:
+                            nombre = str(nombres[0])
+                        
+                        nombre = [str(n) for n in nombre]
+                        nombre = ' '.join(nombre)
+                    # print(nombre,nombres)
+                    # if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
+                    #     ind = 0
+                    #     nl = []
+                    #     for elem in val[nombre]:
+                    #         nl.append(str(elem) + ' '+ str(ap[index:][ind]))
+                    #         ind += 1
+                    #     val[nombre] = nl
+                    if nombre not in val:
+                        val[nombre] = [ap[-1]]
                
                 nuevo_df = pd.DataFrame(val)
-            # except:
-            #     print('algun error con el unnamed 2')
+            
                    
         return nuevo_df
    
@@ -153,7 +191,40 @@ class clase_pregunta():
         # nuevo_df = nuevo_df.drop([1], axis=0)
         nuevo_df = nuevo_df.reset_index(drop=True)
         return nuevo_df
-       
+    
+    @staticmethod
+    def tabla_partes(df):
+        partes = clase_pregunta.buscarpalabra('(1 de', df)
+        if not partes:
+            return df
+        colyfil = clase_pregunta.imagen(df)
+        espacios = clase_pregunta.distancia(colyfil['fila'],1)
+        #Espacios tendrá más de dos elementos, y se cuenta a partir del segundo, ya que las tablas siguen esa distribución de una fila vacía por salto de parte de tabla
+        cant_tablas = df.iat[partes[0][0],partes[0][1]]
+        can = cant_tablas[-3:-1]
+        can = int(can) #siempre tiene que ser 2 o más
+        filas_inicio = [np.nan for i in range(colyfil['fila'][espacios[0]+1]+1)]
+        # filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1)] #este sirve para cuando estén vacias las columnas en el contenido
+        filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)]
+        # print(len(filas_fin),colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)
+        #contruir lista de columnas para el dataframe
+        nuevas_columnas = {}
+        longitud_tabla = colyfil['fila'][-1]+1-colyfil['fila'][espacios[1]+1]+1 #la cantidad de filas que tiene la tabla
+        for tabla in range(1,can):
+            filaS = colyfil['fila'][espacios[tabla]]+2 #la fila donde empieza la tabla
+            print(filaS)
+            c = 0
+            for columna in df:
+                ap = list(df[columna])
+                nuevas_columnas[str(tabla)+str(c)] = filas_inicio + ap[filaS:longitud_tabla+1] + filas_fin
+                c += 1
+                print(ap[filaS:longitud_tabla+1])
+        # print(nuevas_columnas)
+        add = pd.DataFrame(nuevas_columnas)
+        nuevo_df = pd.concat([df,add],axis=1)
+        nuevo_df = nuevo_df.drop([partes[0][0]+1],axis=0)
+        return nuevo_df
+    
     @staticmethod
     def distancia(lista,nfilas):
         """
@@ -214,7 +285,43 @@ class clase_pregunta():
             cont+=1
        
         return entot  
-
+    
+    @staticmethod
+    def buscarpalabra(palabra,hopan):
+        """
+        
+    
+        Parameters
+        ----------
+        palabra : (str). La palabra o frase que se va a 
+        buscar (no es búsqueda exacta!, solo que esté en el texto).
+        hopan : Dataframe de pandas.
+    
+        Returns
+        -------
+        entot : (list). Regresa una lista de tuplas con las coordenadas de 
+        la palabra
+    
+        """
+        
+        sa = hopan.fillna('')
+        listas = sa.to_numpy().tolist()
+        cont = 0
+        entot = []
+        for lista in listas:
+            vo = 0
+            try:
+                for elm in lista:
+                    if palabra in elm:
+                        sad = (cont,vo)
+                        entot.append(sad)
+                    else:
+                        pass
+                    vo+=1
+                cont+=1
+            except:
+                pass
+        return entot
 
 
 
