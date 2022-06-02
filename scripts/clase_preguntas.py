@@ -14,7 +14,7 @@ class clase_pregunta():
         borrar = '.- '
         self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
         self.dfraw = dataframe
-        self.tabla = clase_pregunta.tabla(self,dataframe)
+        self.tabla = clase_pregunta.tablas(self,dataframe)
         # self.metadata = metadata
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
@@ -28,7 +28,45 @@ class clase_pregunta():
     def clas_tipo(df):
         #aqui modelo de clasificación de pregunta tipo analizarcoor
         return 'desconocido'
-   
+    
+    def tablas(self,df):
+        "hacer varios dataframes por cada tabla de la pregunta"
+        nombres_iniciales = list(df.columns)
+        bs = ['I)','II)','III)','IV)','V)','VI)','VII)','VIII)']
+        cortar = []
+        fila = 0
+        self.rawercut = {}
+        for valor in df[nombres_iniciales[2]]: #equivalente a unnamed 2 
+            
+            for v in bs:
+                try:
+                    if v in valor:
+                        cortar.append(fila)
+                except: #excepcion por valores nan
+                    pass
+            fila += 1
+        
+        if not cortar:
+            tablas = {1:clase_pregunta.tabla(self,df)}
+            return tablas
+        
+        if cortar:
+            cortar = list(set(cortar))
+            cortar.sort()
+            
+            tablas = {}
+            c = 0
+            for ind in cortar:
+                if ind != cortar[-1]:
+                    nf = df.iloc[ind:cortar[c+1]+1]   
+                else:
+                    nf = df.iloc[ind:]
+                self.rawercut[c] = nf
+                tablas[c] = clase_pregunta.tabla(self,nf)
+                c += 1
+                    
+        return tablas
+    
     def tabla(self,df):
         """
        
@@ -46,6 +84,8 @@ class clase_pregunta():
 
         """
         #comienza con proceso de detectar tabla por partes para juntarlo todo en una sola
+        df = df.reset_index(drop=True)
+        nombres_iniciales = list(df.columns)
         df = clase_pregunta.tabla_partes(df)
         self.rawer = df
         na = pd.isna(df)
@@ -57,30 +97,38 @@ class clase_pregunta():
             c += 1
         mayor = max(columnas)
         nuevo_df = clase_pregunta.borrar_col(df)
-        #Aqui debe ir iteracion para más de una tabla
+        
+       
        
         if mayor > 15: #Se trata de una tabla
             colyfil = clase_pregunta.imagen(nuevo_df)
             espacios = clase_pregunta.distancia(colyfil['fila'],1) #forzozamente debe arrojar al menos dos numeros dentro de la lista
+            if not espacios or len(espacios)==1:
+                espacios = [colyfil['fila'][0],colyfil['fila'][-1]]
+            
             inf =  [i for i in range(0,colyfil['fila'][espacios[0]+1])]
             sup = [i for i in range(colyfil['fila'][espacios[1]]+1,len(nuevo_df['Unnamed: 2'].values))]
             nuevo_df = nuevo_df.drop(inf + sup, axis=0)
-            nuevo_df = nuevo_df.drop(['Unnamed: 0','Unnamed: 1'],axis=1)
+            print(inf,sup,espacios,len(nuevo_df['Unnamed: 2'].values))
+            try:
+                nuevo_df = nuevo_df.drop([nombres_iniciales[0],nombres_iniciales[1]],axis=1)
+            except:#excepcion por si las columnas unnamed 0 y 1 ya fueron borradas. Eso pasa con las preguntas que tienen varias tablas
+                pass
             nuevo_df = clase_pregunta.borrar_col(nuevo_df)
-            # print(colyfil,espacios,inf,sup)
+           
            
             #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
             bus = ['1.', '1. ', '01.', '01. ']
             comprobador = []
             val = {}
             
-            
+            # print('por encontrar', nuevo_df['Unnamed: 2'].values)
             for uno in bus:
                 if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                     break
-               
+                # print('por encontrar', nuevo_df['Unnamed: 2'].values)
                 if uno in nuevo_df['Unnamed: 2'].values:
-                   
+                    
                     comprobador.append(1)
                     c = 0
                     index = 0
@@ -121,8 +169,16 @@ class clase_pregunta():
                             nombre = ' '.join(nombre)
                         # print(nombre,nombres)
                         if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
+                            if nombre in val:
+                                print('por nombre repetido')
+                            if condicion == 'juntar':
+                                print('por condicion')
+                            if nombre in val and condicion == 'juntar':
+                                print('por nombre y condicion')
                             ind = 0
                             nl = []
+                            for key in val:
+                                nombre = key #con esta iteracion se asegura tener el útimo nombre registrado de columna para juntarla
                             for elem in val[nombre]:
                                 nl.append(str(elem) + ' '+ str(ap[index:][ind]))
                                 ind += 1
@@ -130,8 +186,9 @@ class clase_pregunta():
                         if nombre not in val:
                            
                             val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
-                   
+                        
                     nuevo_df = pd.DataFrame(val)
+                    
             if not comprobador: #tabla de filas unicas
                 nuevo_df = nuevo_df.fillna('borra')
                 nombres = []
@@ -148,7 +205,10 @@ class clase_pregunta():
                         
                         nombres = nnn
                     if not nombres:
-                        nombre = str(ap[-2])
+                        try:
+                            nombre = str(ap[-2])
+                        except:
+                            nombre = str(ap[-1])
                    
                     if nombres:
                         if len(nombres) > 1:
@@ -180,12 +240,14 @@ class clase_pregunta():
    
     @staticmethod
     def borrar_col(df):
+        
         df = df.reset_index(drop=True)
         na = pd.isna(df)
         ncolum = []
         for i in na:
             if False in na[i].values:
                 ncolum.append(i)
+        # print(na['Unnamed: 2'].values)
         borrar_col = [nombre for nombre in list(df.columns) if nombre not in ncolum]
         nuevo_df = df.drop(borrar_col, axis=1)
         # nuevo_df = nuevo_df.drop([1], axis=0)
@@ -203,26 +265,27 @@ class clase_pregunta():
         cant_tablas = df.iat[partes[0][0],partes[0][1]]
         can = cant_tablas[-3:-1]
         can = int(can) #siempre tiene que ser 2 o más
-        filas_inicio = [np.nan for i in range(colyfil['fila'][espacios[0]+1]+1)]
+        filas_inicio = [np.nan for i in range(colyfil['fila'][espacios[0]+1])]#[espacios[0]+1]+1)
         # filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1)] #este sirve para cuando estén vacias las columnas en el contenido
-        filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)]
+        # filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)]
         # print(len(filas_fin),colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)
         #contruir lista de columnas para el dataframe
         nuevas_columnas = {}
-        longitud_tabla = colyfil['fila'][-1]+1-colyfil['fila'][espacios[1]+1]+1 #la cantidad de filas que tiene la tabla
+        longitud_tabla = colyfil['fila'][-1]+1-colyfil['fila'][espacios[1]+1]#+1 #la cantidad de filas que tiene la tabla
         for tabla in range(1,can):
             filaS = colyfil['fila'][espacios[tabla]]+2 #la fila donde empieza la tabla
-            print(filaS)
+            
             c = 0
             for columna in df:
                 ap = list(df[columna])
-                nuevas_columnas[str(tabla)+str(c)] = filas_inicio + ap[filaS:longitud_tabla+1] + filas_fin
+                nuevas_columnas[str(tabla)+str(c)] = filas_inicio + ap[filaS:filaS+longitud_tabla+1]
+                
                 c += 1
-                print(ap[filaS:longitud_tabla+1])
+                
         # print(nuevas_columnas)
         add = pd.DataFrame(nuevas_columnas)
         nuevo_df = pd.concat([df,add],axis=1)
-        nuevo_df = nuevo_df.drop([partes[0][0]+1],axis=0)
+        nuevo_df = nuevo_df.drop([partes[0][0]],axis=0)
         return nuevo_df
     
     @staticmethod
