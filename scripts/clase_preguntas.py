@@ -112,7 +112,8 @@ class clase_pregunta():
     
     @staticmethod
     def transformar_notab(df):
-        
+        print(df.columns,df.head())
+        #primer paso distinguir de cual de las dos se trata. Las de medio tablas inician en el 6 y la otras en el 2. Un buen indicador también son los saltos de lineas
         return df
     
     @staticmethod
@@ -179,7 +180,7 @@ class clase_pregunta():
                                 if filaN != 'borra':
                                     nnn.append(filaN)
                     if nnn:
-                        print(nnn, intermedios)
+                        # print(nnn, intermedios)
                         nombres = nnn
                     if not nombres:
                         nombre = str(ap[index-1])
