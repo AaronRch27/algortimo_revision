@@ -107,15 +107,27 @@ class clase_pregunta():
         if mayor > 15: #Se trata de una tabla
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df)
         else: #para los que no son tablas
-            nuevo_df = clase_pregunta.transformar_notab(nuevo_df)
+            nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor)
 
         return nuevo_df
    
     @staticmethod
-    def transformar_notab(df):
-        print(df.columns,df.head())
-        #primer paso distinguir de cual de las dos se trata. Las de medio tablas inician en el 6 y la otras en el 2. Un buen indicador también son los saltos de lineas
-        return df
+    def transformar_notab(df,mayor):
+        
+        colyfil = clase_pregunta.imagen(df)
+        espacios = clase_pregunta.distancia(colyfil['fila'],1)
+        c_espacios = espacios + [] #crear una copia para modificarla
+        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        for espacio in espacios:#sacar los espacios que no sirven, aunque 
+            if espacio > previo_comentario[0][0]:
+                c_espacios.remove(espacio)
+        inf =  [i for i in range(0,colyfil['fila'][espacios[0]]+2)]
+        sup = [i for i in range(colyfil['fila'][espacios[-1]]+1,len(df['Unnamed: 2'].values))]
+        nuevo_df = df.drop(inf + sup, axis=0)
+        # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
+        
+        
+        return nuevo_df
     
     @staticmethod
     def transformar_tabla(nuevo_df):
