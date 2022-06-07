@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Apr 27 14:05:03 2022
-
 @author: AARON.RAMIREZ
 """
 import numpy as np
@@ -12,17 +11,14 @@ from clase_preguntas import clase_pregunta
 def preguntas(hopan):
     """
     
-
     Parameters
     ----------
     hopan : es un dataframe de pandas.
-
     Returns
     -------
     ind : (list).
     Regresa una lista con el número de fila en la que detectó cada pregunta.
     Aquí se incluye lo de los número romanos
-
     """
     
     c=0
@@ -39,19 +35,16 @@ def preguntas(hopan):
 def espacio(hopan,preguntas):
     """
     
-
     Parameters
     ----------
     hopan : dataframe de pandas.
     preguntas : (list). Corresponde a la lista que genera la 
     función preguntas
-
     Returns
     -------
     di : (dict). Regresa diccionario con el numero de la fila 
     donde hay pregunta como llave, y su valor es el espacio que abarca 
     (es una lista de dos valores)
-
     """
     
     a = preguntas
@@ -71,19 +64,16 @@ def espacio(hopan,preguntas):
 def imagen(cor,hopan,preguntas,seccion):
     """
     
-
     Parameters
     ----------
     cor : tupla, creo, con el tamaño de pregunta inicio y término
     hopan : Dataframe de pandas.
     preguntas : (list). Lista de preguntas
     contenedor: dic Diccionario donde se almacenarán las preguntas
-
     Returns
     -------
     ente : (dict).genera un diccionario con filas y columnas en los que se 
     registra un valor de la pregunta
-
     """
         
     a = cor[0]
@@ -100,18 +90,15 @@ def imagen(cor,hopan,preguntas,seccion):
 def procesar(hopan,seccion):
     """
     
-
     Parameters
     ----------
     hopan : Dataframe pandas con todo el cuestionario
         
     seccion : str
         string con nombre de la seccion.
-
     Returns
     -------
     None.
-
     """
     lista_preguntas = preguntas(hopan)
     tam_preguntas = espacio(hopan, lista_preguntas)
