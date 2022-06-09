@@ -124,8 +124,12 @@ class clase_pregunta():
         inf =  [i for i in range(0,colyfil['fila'][espacios[0]]+2)]
         sup = [i for i in range(colyfil['fila'][espacios[-1]]+1,len(df['Unnamed: 2'].values))]
         nuevo_df = df.drop(inf + sup, axis=0)
+        nuevo_df = clase_pregunta.borrar_col(nuevo_df)
+        forma = nuevo_df.shape
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
-        
+        #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
+        if forma[1] > 2:
+            
         
         return nuevo_df
     
