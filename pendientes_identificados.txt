@@ -1,0 +1,8 @@
+Las tablas por partes tienen un problema ya que no se borra 
+la columna de identificador para las partes de tablas, lo que 
+ocasiona que se mezcle con la última columna de la tabla anterior.
+
+
+el cuetioario CNSIPEF 2022 M1, en pregunta 6.3 no se lee como debería,
+esto debido a que excede la len(2) por el comentario, entonces hay que
+hacer más específica esa condicional

@@ -128,9 +128,70 @@ class clase_pregunta():
         forma = nuevo_df.shape
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
-        if forma[1] > 2:
-            
-        
+        if forma[1] > 2: #Esto solo aplicará para las preguntas que tienen desagregados
+            nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
+            nfram = {}
+            nombres_c = list(nuevo_df.columns)
+            col = 0
+            for columna in nombres_c:
+                c = 0
+                for valor in nuevo_df[columna]:
+                    if type(valor) == int or type(valor) == float:
+                        nfram[nuevo_df[nombres_c[col+2]][c]] = [valor]
+                        try:
+                            lista = list(nuevo_df[nombres_c[col+2+1]][c+1:])
+                            lista2 = list(nuevo_df[nombres_c[col+2]][c+1:])
+                            
+                            c1 = 0
+                            for i in lista2:
+                                if type(i) == str and len(i) > 4:
+                                    break
+                                c1 += 1
+                            lista = lista[0:c1]
+                            anexar = []
+                            c2 = 1
+                            for otrov in lista:
+                                if otrov != '    ':
+                                    anexar.append(nuevo_df[nombres_c[col+1]][c+c2])
+                                    # nfram[nuevo_df[nombres_c[col+2]][c]].insert(0, nuevo_df[nombres_c[col+1]][c+c2])
+                                c2 += 1
+                            nfram[nuevo_df[nombres_c[col+2]][c]] = anexar + nfram[nuevo_df[nombres_c[col+2]][c]] #esto es para dejar el total hasta abajo de la columna
+                        except:
+                            pass
+                        
+                    if type(valor) == str and len(valor) < 3: #por esta condicion se necesitan los 4 espacios. Esto es para no dejar fuera los NA o NS
+                        nfram[nuevo_df[nombres_c[col+2]][c]] = [valor]
+                        try:
+                            lista = list(nuevo_df[nombres_c[col+2+1]][c+1:])
+                            lista2 = list(nuevo_df[nombres_c[col+2]][c+1:])
+                            
+                            c1 = 0
+                            for i in lista2:
+                                if type(i) == str and len(i) > 4:
+                                    break
+                                c1 += 1
+                            lista = lista[0:c1]
+                            anexar = []
+                            c2 = 1
+                            for otrov in lista:
+                                if otrov != '    ':
+                                    anexar.append(nuevo_df[nombres_c[col+1]][c+c2])
+                                c2 += 1
+                            nfram[nuevo_df[nombres_c[col+2]][c]] = anexar + nfram[nuevo_df[nombres_c[col+2]][c]] #esto es para dejar el total hasta abajo de la columna
+                        except:
+                            pass
+                    else:
+                        pass
+                    c += 1
+                col += 1
+            #Lo que se hace a continuación es rellenar las listas del diccionario con nan para poder crear un dataframe
+            ext = [len(nfram[key]) for key in nfram]
+            parana = max(ext)
+            for key in nfram:
+                numerona = parana - len(nfram[key])
+                for i in range(numerona):
+                    nfram[key].append(np.nan)
+            nuevo_df = pd.DataFrame(nfram)
         return nuevo_df
     
     @staticmethod
