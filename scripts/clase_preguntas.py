@@ -11,7 +11,7 @@ class clase_pregunta():
    
     def __init__(self,dataframe,seccion):
         self.nombre_lit = dataframe.iat[0,0]
-        borrar = '.- '
+        borrar = '- ' #solia remover el punto también pero entocnes hay preguntas con el mismo nombre como 1.11 y 11.1
         self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
         self.dfraw = dataframe
         self.tablas = clase_pregunta.tablas(self,dataframe)
@@ -103,8 +103,8 @@ class clase_pregunta():
         medidas = df.shape
         if medidas[0] < 10: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
             probar = clase_pregunta.sino(df)  
-        if probar:
-            return probar
+            if probar:
+                return probar
         # nombres_iniciales = list(df.columns)
         df = clase_pregunta.tabla_partes(df)
         self.rawer = df
@@ -151,7 +151,7 @@ class clase_pregunta():
                     break
                 c += 1
         if b != 3:
-            return []
+            return [] #regresa lista vacía para que se pueda terminar el ciclo con un condicional en la funcion tabla
         
         if b == 3: #se trata de la pregunta que se está buscando
             b1 = 0
