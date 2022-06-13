@@ -45,7 +45,19 @@ class clase_pregunta():
                 except: #excepcion por valores nan
                     pass
             fila += 1
-        
+            
+        if not cortar: #comprobación adicional por si lollegaron a escribir en la columna B
+            fila = 0
+            for valor in df[nombres_iniciales[1]]: #equivalente a unnamed 1 
+                
+                for v in bs:
+                    try:
+                        if v in valor:
+                            cortar.append(fila)
+                    except: #excepcion por valores nan
+                        pass
+                fila += 1
+                
         if not cortar:
             tablas = {1:clase_pregunta.tabla(self,df)}
             return tablas
@@ -88,7 +100,11 @@ class clase_pregunta():
         
         df = df.reset_index(drop=True)
         df = clase_pregunta.borrar_S(df)
-        
+        medidas = df.shape
+        if medidas[0] < 10: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
+            probar = clase_pregunta.sino(df)  
+        if probar:
+            return probar
         # nombres_iniciales = list(df.columns)
         df = clase_pregunta.tabla_partes(df)
         self.rawer = df
@@ -112,6 +128,64 @@ class clase_pregunta():
         return nuevo_df
    
     @staticmethod
+    def sino(df):
+        "identificar preguntas de si, no, no se sabe"
+        #buscar los tres terminos en el frame
+        b = 0
+        palabras = ['Sí','No', 'No se'] #identificadores
+        contador_columna = 0
+        for palabra in palabras:
+            c = 0 + contador_columna #variable para control de columna en la que se va iterando, ya que no se busca repetir la iteracion desde la primer columna luego de encontrar alguna palabra
+            for col in df.iloc[contador_columna:]: #iterar columnas desde donde se encontró la última palabra o desde cero
+                a = 0 #variable solo para poner el break si pasa lo de abajo
+                for valor in df[col].values:
+                    try: #por nan se hace esta excepcion, no se puede comparar string con nan
+                        if palabra in valor:
+                            contador_columna = c + 1 #Mas uno para iniciar desde siguiente columna
+                            a = 1
+                            b += 1
+                            break
+                    except:
+                        pass
+                if a == 1:
+                    break
+                c += 1
+        if b != 3:
+            return []
+        
+        if b == 3: #se trata de la pregunta que se está buscando
+            b1 = 0
+            cord = 0
+            palabras = ['X','x'] #identificadores
+            for palabra in palabras:
+                c = 0
+                for col in df:
+                    fila = 0
+                    for valor in df[col].values:
+                        try: #por nan se hace esta excepcion, no se puede comparar string con nan
+                            if palabra == valor:
+                                cord = (fila,c)
+                                b1 += 1        
+                        except:
+                            pass
+                        fila += 1
+                    c += 1
+                    
+            # respuesta = 0 #no debería ser necesario definirla previamente, si surge error aquí es por algo con b1
+            
+            if b1 == 0:
+                respuesta = 'No se respondió la pregunta'
+            if b1 > 1:
+                respuesta = 'Error, se respondió más de una opción'
+            if b1 == 1:
+                #se extrae el valor de la respuesta donde se escribió X
+                nom = list(df.columns)
+                
+                respuesta = df[nom[cord[1]+1]][cord[0]]
+            
+            return respuesta
+        
+    @staticmethod
     def transformar_notab(df,mayor):
         
         colyfil = clase_pregunta.imagen(df)
@@ -126,9 +200,10 @@ class clase_pregunta():
         nuevo_df = df.drop(inf + sup, axis=0)
         nuevo_df = clase_pregunta.borrar_col(nuevo_df)
         forma = nuevo_df.shape
+        
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
-        if forma[1] > 2: #Esto solo aplicará para las preguntas que tienen desagregados
+        if forma[1] > 2 and len(c_espacios) > 2: #Esto solo aplicará para las preguntas que tienen desagregados
             nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
             nfram = {}
             nombres_c = list(nuevo_df.columns)
@@ -205,14 +280,19 @@ class clase_pregunta():
         
         inf =  [i for i in range(0,colyfil['fila'][espacios[0]+1])]
         sup = [i for i in range(colyfil['fila'][espacios[1]]+1,len(nuevo_df['Unnamed: 2'].values))]
+        
         nuevo_df = nuevo_df.drop(inf + sup, axis=0)
-       
+        
         try:
             nuevo_df = nuevo_df.drop(['Unnamed: 0','Unnamed: 1'],axis=1)
         except:#excepcion por si las columnas unnamed 0 y 1 ya fueron borradas. Eso pasa con las preguntas que tienen varias tablas
             pass
+        # nombres_iniciales = list(nuevo_df.columns)
+        # print(nombres_iniciales)
+        
         nuevo_df = clase_pregunta.borrar_col(nuevo_df)
-
+        # nombres_iniciales = list(nuevo_df.columns)
+        # print(nombres_iniciales)
         #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
         bus = ['1.', '1. ', '01.', '01. ']
         comprobador = []
