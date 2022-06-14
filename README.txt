@@ -1,1 +1,2 @@
 Por cuestiones de seguridad, la carpeta de cuestionarios estará vacía. Esos documentos solo se comparten por medios institucionales.
+Sin embargo, contiene archivos que sirven como guía para el desarrollo del proyecto.

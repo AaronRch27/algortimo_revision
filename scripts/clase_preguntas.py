@@ -45,7 +45,7 @@ class clase_pregunta():
                 except: #excepcion por valores nan
                     pass
             fila += 1
-            
+           
         if not cortar: #comprobación adicional por si lollegaron a escribir en la columna B
             fila = 0
             for valor in df[nombres_iniciales[1]]: #equivalente a unnamed 1 
@@ -63,6 +63,17 @@ class clase_pregunta():
             return tablas
         
         if cortar:
+            comentario = 0
+            fila = 0
+            for val in df[nombres_iniciales[2]]:#busqueda para depurar los que puedan estar en el comentario del informante
+                try:#no se puede comparar con nan
+                    if 'En caso de tener algún' in val:
+                        comentario = fila
+                        break
+                except:
+                    pass
+                fila += 1
+            cortar = [corta for corta in cortar if corta < comentario]    
             cortar = list(set(cortar))
             cortar.sort()
             
@@ -101,6 +112,7 @@ class clase_pregunta():
         df = df.reset_index(drop=True)
         df = clase_pregunta.borrar_S(df)
         medidas = df.shape
+        # print(medidas)
         if medidas[0] < 10: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
             probar = clase_pregunta.sino(df)  
             if probar:
@@ -118,8 +130,6 @@ class clase_pregunta():
         mayor = max(columnas)
         nuevo_df = clase_pregunta.borrar_col(df)
         
-       
-       
         if mayor > 15: #Se trata de una tabla
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df)
         else: #para los que no son tablas
@@ -282,7 +292,7 @@ class clase_pregunta():
         sup = [i for i in range(colyfil['fila'][espacios[1]]+1,len(nuevo_df['Unnamed: 2'].values))]
         
         nuevo_df = nuevo_df.drop(inf + sup, axis=0)
-        
+
         try:
             nuevo_df = nuevo_df.drop(['Unnamed: 0','Unnamed: 1'],axis=1)
         except:#excepcion por si las columnas unnamed 0 y 1 ya fueron borradas. Eso pasa con las preguntas que tienen varias tablas
@@ -294,7 +304,7 @@ class clase_pregunta():
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
         #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
-        bus = ['1.', '1. ', '01.', '01. ']
+        bus = ['1.', '1. ', '01.', '01. ','1',1]
         comprobador = []
         val = {}
         
@@ -309,7 +319,7 @@ class clase_pregunta():
                 c = 0
                 index = 0
                 for fila in nuevo_df['Unnamed: 2'].values:
-                    if uno in str(fila):
+                    if str(uno) in str(fila):
                         index = c
                         break
                     c += 1
@@ -379,7 +389,7 @@ class clase_pregunta():
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
                     
                 nuevo_df = pd.DataFrame(val)
-                
+        # print(comprobador)        
         if not comprobador: #tabla de filas unicas
             nuevo_df = nuevo_df.fillna('borra')
             nombres = []
@@ -491,12 +501,25 @@ class clase_pregunta():
     
     @staticmethod
     def tabla_partes(df):
-        partes = clase_pregunta.buscarpalabra('(1 de', df)
+        partes = clase_pregunta.buscarpalabra('(1 de ', df)
+        df = df.reset_index(drop=True)
         if not partes:
             return df
         colyfil = clase_pregunta.imagen(df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         #Espacios tendrá más de dos elementos, y se cuenta a partir del segundo, ya que las tablas siguen esa distribución de una fila vacía por salto de parte de tabla
+        partes1 = partes[0]
+        filas = [colyfil['fila'][s] for s in espacios]
+        des_esp_ini = [i for i in filas if i > partes1[0]] #espacios despues del espacio inicial, para detetctar saltos en encabezado de tabla
+        for fil in des_esp_ini:
+            if fil < partes1[0]+3:#una diferencia de tres debido a que no hay tablas que solo tengan 3 filas de longitud y sean tablas por partes
+                ind = 0
+                for i in filas:
+                    if i == fil:
+                        break
+                    ind += 1
+                espacios.pop(ind) #borrar esos espacios extras debido a maal diseño de encabezado de tabla
+        
         cant_tablas = df.iat[partes[0][0],partes[0][1]]
         can = cant_tablas[-3:-1]
         can = int(can) #siempre tiene que ser 2 o más
@@ -514,10 +537,27 @@ class clase_pregunta():
             c = 0
             for columna in df:
                 ap = list(df[columna])
-                nuevas_columnas[str(tabla)+str(c)] = filas_inicio + ap[filaS:filaS+colyfil['fila'][espacios[1]+1]]+llenado
+                nuevas_columnas[int(str(tabla)+str(c))] = filas_inicio + ap[filaS:filaS+colyfil['fila'][espacios[1]+1]]+llenado
                 
                 c += 1
-        
+        # print(espacios,colyfil['fila'],aver,partes)
+        #eliminar columnas de index
+        index = ['1.', '1. ', '01.', '01. ']
+        borrar = []
+        for k in nuevas_columnas:
+            c = 0
+            for val in nuevas_columnas[k]:
+                if val in index:
+                    borrar.append(k)
+                    nex = nuevas_columnas[k+1]
+                    siguiente = list(set(nex[:c]))
+                    
+                    if len(siguiente) < 2:
+                        borrar.append(k+1)
+                    break
+                c += 1
+        for br in borrar:
+            del nuevas_columnas[br]
         add = pd.DataFrame(nuevas_columnas)
         nuevo_df = pd.concat([df,add],axis=1)
         nuevo_df = nuevo_df.drop([partes[0][0]],axis=0)

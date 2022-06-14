@@ -1,0 +1,5 @@
+El tema para identificar el index de las tablas. Suelen poner una numeración 
+por separado siempre al inicio de la tabla. La única recomendación en este 
+sentido es que esa numeración esté en su propia celda, mientras que el nombre
+del numeral se ponga en otra, aunque tenga desagregados. En las tablas de
+tipo de delito lo hacen muy bien, seguir bajo ese formato.
