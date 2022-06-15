@@ -82,6 +82,7 @@ def imagen(cor,hopan,preguntas,seccion):
         mdf = hopan.iloc[a:b,0:31]
     else:
         mdf = hopan.iloc[a:b]
+    mdf = mdf.reset_index(drop=True)
     objeto = clase_pregunta(mdf, seccion)
     
     return objeto
