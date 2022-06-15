@@ -8,23 +8,25 @@ import pandas as pd
 import numpy as np
 import joblib
 
-modelo1 = joblib.load('modelo_primer_filtro.sav')
+#Los modelos se deben cargar desde el main
+# modelo1 = joblib.load('modelo_primer_filtro.sav')
 
-vector1 = joblib.load('vectorizador_fil.sav')
+# vector1 = joblib.load('vectorizador_fil.sav')
 
-modelo2 = joblib.load('modelo_segundo_filtro.sav')
+# modelo2 = joblib.load('modelo_segundo_filtro.sav')
 
-vector2 = joblib.load('vectorizador_fil2.sav')
+# vector2 = joblib.load('vectorizador_fil2.sav')
+
 class clase_pregunta():
    
-    def __init__(self,dataframe,seccion):
+    def __init__(self,dataframe,seccion,modelos):
         self.nombre_lit = dataframe.iat[0,0]
         self.pregunta = dataframe.iat[0,1]
         borrar = '- ' #solia remover el punto también pero entocnes hay preguntas con el mismo nombre como 1.11 y 11.1
         self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
         self.dfraw = dataframe
         self.tablas = clase_pregunta.tablas(self,dataframe)
-        self.metadata = clase_pregunta.meta(self,dataframe)
+        self.metadata = clase_pregunta.meta(self,dataframe,modelos)
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
         self.seccion = seccion
@@ -99,8 +101,9 @@ class clase_pregunta():
                     
         return tablas
     
-    def meta(self,df):
+    def meta(self,df,M):
         """
+        M es modelos
         Esta función es para generar los metadatos de la pregunta:
             instrucciones
             instrucciones clasificadas por el modelo
@@ -139,9 +142,9 @@ class clase_pregunta():
         self.instrucciones = instrucciones
         res['instrucciones'] = instrucciones
         #clasificar instrucciones
-        matriz = vector1.transform(instrucciones)
+        matriz = M[1].transform(instrucciones)
         data = pd.DataFrame(matriz.toarray(),index=instrucciones)
-        primer = modelo1.predict(data)
+        primer = M[0].predict(data)
         seginstr = []
         c = 0 
         for i in primer:#filtrar las instrucciones evaludas como importantes
@@ -149,9 +152,9 @@ class clase_pregunta():
                 seginstr.append(instrucciones[c])
             c+=1
         
-        matriz1 = vector2.transform(seginstr)
+        matriz1 = M[3].transform(seginstr)
         data = pd.DataFrame(matriz1.toarray(),index=seginstr)
-        segundo = modelo2.predict(data)
+        segundo = M[2].predict(data)
         inss = {}
         c = 0
         for i in segundo:
@@ -159,7 +162,6 @@ class clase_pregunta():
             c += 1
         self.instruccio_clasificadas = inss
         res['instruc_clasificadas'] = self.instruccio_clasificadas
-        print(res['instruc_clasificadas'])
         
         #buscar los especifuque
         candidatos = []

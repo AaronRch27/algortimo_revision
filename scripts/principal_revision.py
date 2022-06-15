@@ -61,7 +61,7 @@ def espacio(hopan,preguntas):
     return di
 
 
-def imagen(cor,hopan,preguntas,seccion):
+def imagen(cor,hopan,preguntas,seccion,modelos):
     """
     
     Parameters
@@ -83,12 +83,12 @@ def imagen(cor,hopan,preguntas,seccion):
     else:
         mdf = hopan.iloc[a:b]
     mdf = mdf.reset_index(drop=True)
-    objeto = clase_pregunta(mdf, seccion)
+    objeto = clase_pregunta(mdf, seccion,modelos)
     
     return objeto
 
 
-def procesar(hopan,seccion):
+def procesar(hopan,seccion,modelos):
     """
     
     Parameters
@@ -107,7 +107,7 @@ def procesar(hopan,seccion):
     contador = 0
     cuestionario = {}#aqui se van a almacenar las preguntas como objetos
     for preg in lista_preguntas:
-        objeto = imagen(tam_preguntas[contador], hopan, preg, seccion)
+        objeto = imagen(tam_preguntas[contador], hopan, preg, seccion,modelos)
         cuestionario[objeto.nombre] = objeto
         print('pregunta creada con nombre ', objeto.nombre)
         contador += 1
