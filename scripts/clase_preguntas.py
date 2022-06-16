@@ -141,25 +141,32 @@ class clase_pregunta():
             c += 1
         self.instrucciones = instrucciones
         res['instrucciones'] = instrucciones
+        inss = {}
         #clasificar instrucciones
         matriz = M[1].transform(instrucciones)
         data = pd.DataFrame(matriz.toarray(),index=instrucciones)
         primer = M[0].predict(data)
         seginstr = []
         c = 0 
-        for i in primer:#filtrar las instrucciones evaludas como importantes
-            if i == 'importa':
+        
+        for i in primer:#filtrar las instrucciones evaludas de a cuerdo a especifique o a consistencia
+            if i != 'nada':
                 seginstr.append(instrucciones[c])
+                inss[instrucciones[c]] = i
+                # if i in inss:
+                #     inss[i].append(instrucciones[c])
+                # else:
+                #     inss[i] = instrucciones[c]
             c+=1
         
-        matriz1 = M[3].transform(seginstr)
-        data = pd.DataFrame(matriz1.toarray(),index=seginstr)
-        segundo = M[2].predict(data)
-        inss = {}
-        c = 0
-        for i in segundo:
-            inss[i] = seginstr[c]
-            c += 1
+        # matriz1 = M[3].transform(seginstr)
+        # data = pd.DataFrame(matriz1.toarray(),index=seginstr)
+        # segundo = M[2].predict(data)
+        
+        # c = 0
+        # for i in segundo:
+        #     inss[i] = seginstr[c]
+        #     c += 1
         self.instruccio_clasificadas = inss
         res['instruc_clasificadas'] = self.instruccio_clasificadas
         
@@ -167,15 +174,17 @@ class clase_pregunta():
         candidatos = []
         c = 0
         for val in texto:
-            if '(especifique' in val:
+            if '(especifique' in str(val):
                 candidatos.append(c)
-                break
+                
             c +=1 
         espe = 'No hay elementos a especificar'
+        
         if candidatos:
             espe = {}
         for candidato in candidatos:
             fila = list(ndf.iloc[candidato])
+            
             for fi in fila[3:]:#para iniciar después de la columna unnamed 2
                 if fi != 'blanco':
                     espe[fila[2]] = fi
@@ -633,8 +642,8 @@ class clase_pregunta():
             c = 0
             for columna in df:
                 ap = list(df[columna])
-                nuevas_columnas[int(str(tabla)+str(c))] = filas_inicio + ap[filaS:filaS+colyfil['fila'][espacios[1]+1]]+llenado
-                
+                nuevas_columnas[c] = filas_inicio + ap[filaS:filaS+colyfil['fila'][espacios[1]+1]]+llenado
+                #int(str(tabla)+str(c)) lo que iba como indice en nuevas columnas de linea previa
                 c += 1
         # print(espacios,colyfil['fila'],aver,partes)
         #eliminar columnas de index

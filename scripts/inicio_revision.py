@@ -11,16 +11,16 @@ import joblib
 
 libro = 'pregunta_prueba.xlsx'
 
-
+#Estos modelos solo funcionan si se cargan desde el main, es decir, este script kjunto con tokenizar,clasificadorBayes 
 modelo1 = joblib.load('modelo_primer_filtro.sav')
 
 vector1 = joblib.load('vectorizador_fil.sav')
 
-modelo2 = joblib.load('modelo_segundo_filtro.sav')
+# modelo2 = joblib.load('modelo_segundo_filtro.sav')
 
-vector2 = joblib.load('vectorizador_fil2.sav')
+# vector2 = joblib.load('vectorizador_fil2.sav')
 
-modelos = [modelo1, vector1, modelo2, vector2]
+modelos = [modelo1, vector1]
 
 
 
