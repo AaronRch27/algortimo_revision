@@ -5,6 +5,7 @@ Created on Fri May 13 14:38:09 2022
 @author: AARON.RAMIREZ
 """
 from principal_revision import procesar
+from detectar_errores import errores
 import pandas as pd
 from complemento_modelos import tokenizar,clasificadorBayes
 import joblib
@@ -13,6 +14,7 @@ import joblib
 
 
 libro = 'pregunta_prueba.xlsx'
+# libro = 'pregunta_prueba.xlsx'
 
 #Estos modelos solo funcionan si se cargan desde el main, es decir, este script kjunto con tokenizar,clasificadorBayes 
 modelo1 = joblib.load('modelo_primer_filtro.sav')
@@ -43,3 +45,5 @@ for pag in pags:
         data = pd.read_excel(libro,sheet_name=pag,engine='openpyxl')
         aver = procesar(data, pag,modelos)
         cuestionario[pag] = aver
+
+list_erro = errores(cuestionario)

@@ -215,7 +215,7 @@ class clase_pregunta():
 
         
         df = df.reset_index(drop=True)
-        df = clase_pregunta.borrar_S(df)
+        df = clase_pregunta.borrar_S(self,df)
         medidas = df.shape
         # print(medidas)
         if medidas[0] < 10: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
@@ -237,9 +237,10 @@ class clase_pregunta():
         
         if mayor > 15: #Se trata de una tabla
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df)
+            self.tipo_T = 'Tabla'
         else: #para los que no son tablas
             nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor)
-
+            self.tipo_T = 'No Tabla'
         return nuevo_df
    
     @staticmethod
@@ -543,13 +544,15 @@ class clase_pregunta():
         return nuevo_df
     
     @staticmethod
-    def borrar_S(df):
+    def borrar_S(self,df):
         "Borrar la letra S de autosumas en columnas y la palabra Complemento"
         S = clase_pregunta.busqueda_exacta(df, 'S')
         complemento = clase_pregunta.buscarpalabra('Complemento', df)
         if not S and not complemento:
+            self.autosuma = 'No'
             return df
         if S:
+            self.autosuma = 'Si'
             loc = S[0]
             # fila = loc[0]
             columna = loc[1]
@@ -606,8 +609,9 @@ class clase_pregunta():
     
     @staticmethod
     def tabla_partes(df):
-        partes = clase_pregunta.buscarpalabra('(1 de ', df)
         df = df.reset_index(drop=True)
+        partes = clase_pregunta.buscarpalabra('(1 de ', df)
+        
         if not partes:
             return df
         colyfil = clase_pregunta.imagen(df)
@@ -626,6 +630,7 @@ class clase_pregunta():
                 espacios.pop(ind) #borrar esos espacios extras debido a maal diseño de encabezado de tabla
         
         cant_tablas = df.iat[partes[0][0],partes[0][1]]
+        # print(cant_tablas,partes)
         can = cant_tablas[-3:-1]
         can = int(can) #siempre tiene que ser 2 o más
         filas_inicio = [np.nan for i in range(colyfil['fila'][espacios[0]+1])]#[espacios[0]+1]+1)

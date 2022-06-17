@@ -88,13 +88,14 @@ def imagen(cor,hopan,preguntas,seccion,modelos):
             f = 0
             if '##' in list(hopan[columna]):
                 for fila in list(hopan[columna]):
-                    if fila == '##':
+                    if fila == '##': #este caracter se pone manualmente en el complemento!!!!
                         break
                     f += 1
                 break
             c += 1
         mdf = hopan.iloc[a:f,0:c]
-    else:
+    if 'Hoja' in seccion: #este eelse ya no es necesario
+        print('aqui el error')
         mdf = hopan.iloc[a:b]
         
     mdf = mdf.reset_index(drop=True)
