@@ -78,10 +78,25 @@ def imagen(cor,hopan,preguntas,seccion,modelos):
         
     a = cor[0]
     b = cor[1]
-    if 'Sec' in seccion:
+    
+    if 'Sec' in seccion: #para descartar los complementos
         mdf = hopan.iloc[a:b,0:31]
+    if 'Com' in seccion:
+        
+        c = 0
+        for columna in hopan:
+            f = 0
+            if '##' in list(hopan[columna]):
+                for fila in list(hopan[columna]):
+                    if fila == '##':
+                        break
+                    f += 1
+                break
+            c += 1
+        mdf = hopan.iloc[a:f,0:c]
     else:
         mdf = hopan.iloc[a:b]
+        
     mdf = mdf.reset_index(drop=True)
     objeto = clase_pregunta(mdf, seccion,modelos)
     
@@ -103,7 +118,7 @@ def procesar(hopan,seccion,modelos):
     """
     lista_preguntas = preguntas(hopan)
     tam_preguntas = espacio(hopan, lista_preguntas)
-    # print(lista_preguntas,tam_preguntas)
+    
     contador = 0
     cuestionario = {}#aqui se van a almacenar las preguntas como objetos
     for preg in lista_preguntas:

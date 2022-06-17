@@ -9,6 +9,9 @@ import pandas as pd
 from complemento_modelos import tokenizar,clasificadorBayes
 import joblib
 
+#No olvidar marcar los complementos con el inicio de su pregunta y un ## donde termina
+
+
 libro = 'pregunta_prueba.xlsx'
 
 #Estos modelos solo funcionan si se cargan desde el main, es decir, este script kjunto con tokenizar,clasificadorBayes 
