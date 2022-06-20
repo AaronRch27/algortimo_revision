@@ -48,7 +48,7 @@ def aritmeticos(cuestionario):
 
 def totales(df):
     "leer dataframe, regresar error"
-    print(df)
+
     total = []
     subtotal = []
     c = 0
@@ -59,5 +59,42 @@ def totales(df):
             subtotal.append(c)
         c += 1
     print(total,subtotal)
+    if total and not subtotal:
+        c = 0
+        for tot in total:
+            c1 = 0
+            
+            for fila in list(df.iloc[:,0]):
+                
+                try:
+                    lista = list(df.iloc[c1, tot:total[c+1]])
+                except:
+                    lista = list(df.iloc[c1, tot:])
+                print(lista)
+                c1 += 1
+            c += 1
+            
+            
+    return
+
+def evaluador_suma(lista):
+    """
+    
+
+    Parameters
+    ----------
+    lista : list
+        el primer valor de la lista debe ser el total y los demás
+        sus desagregados, los cuales deben ser al menos dos, de 
+        ser menos no hará la comprobación.
+
+    Returns
+    -------
+     str. bien o mal dependiendo cómo se evalue la suma
+
+    """
+    if len(lista) > 3:
+        return 'No se puede evaluar'
+    
     
     return
