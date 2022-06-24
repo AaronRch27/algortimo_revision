@@ -27,6 +27,7 @@ class clase_pregunta():
         self.dfraw = dataframe
         self.tablas = clase_pregunta.tablas(self,dataframe)
         self.metadata = clase_pregunta.meta(self,dataframe,modelos)
+        self.tipo_T = 'Desconocido'
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
         self.seccion = seccion
@@ -308,6 +309,7 @@ class clase_pregunta():
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         c_espacios = espacios + [] #crear una copia para modificarla
         previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        # print(espacios,df)
         for espacio in espacios:#sacar los espacios que no sirven, aunque 
             if espacio > previo_comentario[0][0]:
                 c_espacios.remove(espacio)
@@ -618,6 +620,10 @@ class clase_pregunta():
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         #Espacios tendrá más de dos elementos, y se cuenta a partir del segundo, ya que las tablas siguen esa distribución de una fila vacía por salto de parte de tabla
         partes1 = partes[0]
+        if len(colyfil['fila'])>500:
+            chek = colyfil['fila'][espacios[1]]
+            if chek in range(partes1[0],partes1[0]+4):
+                espacios.pop(1)
         filas = [colyfil['fila'][s] for s in espacios]
         des_esp_ini = [i for i in filas if i > partes1[0]] #espacios despues del espacio inicial, para detetctar saltos en encabezado de tabla
         for fil in des_esp_ini:
@@ -630,9 +636,11 @@ class clase_pregunta():
                 espacios.pop(ind) #borrar esos espacios extras debido a maal diseño de encabezado de tabla
         
         cant_tablas = df.iat[partes[0][0],partes[0][1]]
-        # print(cant_tablas,partes)
+        ver1 = [colyfil['fila'][i] for i in espacios]
+        print(cant_tablas,partes, espacios,ver1)
         can = cant_tablas[-3:-1]
         can = int(can) #siempre tiene que ser 2 o más
+        # print(can)
         filas_inicio = [np.nan for i in range(colyfil['fila'][espacios[0]+1])]#[espacios[0]+1]+1)
         # filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1)] #este sirve para cuando estén vacias las columnas en el contenido
         # filas_fin = [np.nan for i in range(colyfil['fila'][espacios[1]+1]+1,colyfil['fila'][-1]+1)]
@@ -641,19 +649,29 @@ class clase_pregunta():
         nuevas_columnas = {}
         longitud_tabla = colyfil['fila'][-1]+1-colyfil['fila'][espacios[1]+1]#+1 #la cantidad de filas que tiene la tabla
         llenado = [np.nan for i in range(longitud_tabla)]
+        n = 1000
         for tabla in range(1,can):
             filaS = colyfil['fila'][espacios[tabla]]+2 #la fila donde empieza la tabla
-            
+            filaSF = colyfil['fila'][espacios[1]+1]
+            # print(filaS,filaSF, filaS+filaSF)
             c = 0
             for columna in df:
                 ap = list(df[columna])
-                nuevas_columnas[c] = filas_inicio + ap[filaS:filaS+colyfil['fila'][espacios[1]+1]]+llenado
+                # print(len(ap))
+                nuevas_columnas[n+c] = filas_inicio + ap[filaS:filaS+filaSF]+llenado
+                # print(len(ap[filaS:filaS+filaSF]))
+                if n > 0 and len(nuevas_columnas[n+c]) < len(nuevas_columnas[1000]):
+                    alfa = len(nuevas_columnas[1000]) - len(nuevas_columnas[n+c])
+                    completar = [np.nan for i in range(0,alfa)]
+                    nuevas_columnas[n+c] += completar
                 #int(str(tabla)+str(c)) lo que iba como indice en nuevas columnas de linea previa
                 c += 1
+            n += 100
         # print(espacios,colyfil['fila'],aver,partes)
         #eliminar columnas de index
         index = ['1.', '1. ', '01.', '01. ']
         borrar = []
+        # print(nuevas_columnas)
         for k in nuevas_columnas:
             c = 0
             for val in nuevas_columnas[k]:
