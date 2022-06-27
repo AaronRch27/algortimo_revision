@@ -29,12 +29,13 @@ def errores(cuestionario):
 
     """
     aritme = aritmeticos(cuestionario)
+    print(aritme)
     return
 
 
 def aritmeticos(cuestionario):
     "comprobar errores aritmeticos en cada tabla"
-    errores = []
+    errores = {}
     for llave in cuestionario:
         for pregunta in cuestionario[llave]:
             if cuestionario[llave][pregunta].tipo_T == 'Tabla':
@@ -42,7 +43,7 @@ def aritmeticos(cuestionario):
                 for tabla in tablas:
                     er = totales(tablas[tabla])
                     if er:
-                        errores.append(er)
+                        errores[pregunta] = er
     
     return errores
 
@@ -59,6 +60,7 @@ def totales(df):
             subtotal.append(c)
         c += 1
     print(total,subtotal)
+    errores = {}
     if total and not subtotal:
         c = 0
         for tot in total:
@@ -70,12 +72,15 @@ def totales(df):
                     lista = list(df.iloc[c1, tot:total[c+1]])
                 except:
                     lista = list(df.iloc[c1, tot:])
-                print(lista)
+                aritmetic = evaluador_suma(lista)
+                if aritmetic:
+                    errores[c1] = evaluador_suma(lista)
+                
                 c1 += 1
             c += 1
             
             
-    return
+    return errores
 
 def evaluador_suma(lista):
     """
@@ -93,8 +98,46 @@ def evaluador_suma(lista):
      str. bien o mal dependiendo cómo se evalue la suma
 
     """
-    if len(lista) > 3:
+    if len(lista) > 3:#posteriormente entará otra comprobación aquí
         return 'No se puede evaluar'
-    
+    else:
+        errores = []
+        total = lista[0]
+        convertir = ['NS','NA','na','ns','Na','Ns','nA','nS']
+        na = 'No'
+        ns = 'No'
+        comprobar = 'No'
+        desagregados = lista[1:]
+        c = 0
+        for valor in desagregados:
+            if valor in convertir:
+                if valor.lower() == 'na':
+                    na = 'Si'
+                if valor.lower() == 'ns':
+                    ns = 'Si'
+                comprobar = 'Si'
+                desagregados[c] = 0
+            if type(valor) == str and valor not in convertir:
+                desagregados[c] = 0
+                errores.append('Error: valor no permitido')
+            c += 1
+        suma = sum(desagregados)
+        if total in convertir and suma > 0:
+            errores.append('Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA')
+            return errores
+        if total in convertir and suma == 0:
+            if total.lower() == 'na' and ns == 'Si':
+                errores.append('Error: Si el total es NA ninguno de sus desagregados puede ser NS')
+        if type(total) == str and total not in convertir:
+            errores.append('Error: el total es un valor no permitido como respuesta')
+            return errores
+        if type(total) != str:
+            if total != suma:
+                if total >= 0 and comprobar == 'No' and suma > 0:
+                    errores.append('Error: Suma de desagregados no coincide con el total')
+                if total == 0 and ns == 'Si':
+                    errores.append('Si el total es cero, ningún desagregado puede ser NS')
+            
+        return errores
     
     return

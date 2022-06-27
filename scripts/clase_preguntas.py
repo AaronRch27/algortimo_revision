@@ -27,7 +27,7 @@ class clase_pregunta():
         self.dfraw = dataframe
         self.tablas = clase_pregunta.tablas(self,dataframe)
         self.metadata = clase_pregunta.meta(self,dataframe,modelos)
-        self.tipo_T = 'Desconocido'
+        # self.tipo_T = 'Desconocido'
         # self.instr = clase_pregunta.clas_instru(instrucciones)
         # self.tipo_pregunta = clase_pregunta.clas_tipo() #inserte funcion con modelo de clasificacion de tipos de pregunta
         self.seccion = seccion
@@ -48,6 +48,7 @@ class clase_pregunta():
         cortar = []
         fila = 0
         self.rawercut = {}
+        self.tipo_T = 'Desconocido'
         for valor in df[nombres_iniciales[2]]: #equivalente a unnamed 2 
             
             for v in bs:
