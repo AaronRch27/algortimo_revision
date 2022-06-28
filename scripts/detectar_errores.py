@@ -5,6 +5,7 @@ Created on Fri Jun 17 14:27:15 2022
 @author: AARON.RAMIREZ
 """
 
+
 def errores(cuestionario):
     """
     
@@ -44,11 +45,39 @@ def aritmeticos(cuestionario):
                     er = totales(tablas[tabla])
                     if er:
                         errores[pregunta] = er
+            if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
+                tablas = cuestionario[llave][pregunta].tablas
+                for tabla in tablas:
+                    er = totales_desagregados(tablas[tabla])
+                    if er:
+                        errores[pregunta] = er
     
     return errores
 
+def totales_desagregados(df1):
+    "leer dataframe de desagregados y regresar error"
+    df = df1.fillna('...')
+    errores = {}
+    c = 0
+    for col in df:
+        lista = list(df[col])
+        #eliminar nan
+        if '...' in lista:
+            lista.remove('...')
+        #aquí el primer valor suele ser el total, hay que pasarlo hasta el último para que se cumpla la utilidad de la función evaluar_suma
+        if len(lista) > 2: #porque algunas columnas solo tendrán un valor, a esas no se les hace este proceso
+            ins = lista[-1] #es el total
+            lista.insert(0, ins)
+            lista.pop(-1)
+            print(lista)
+            aritme = evaluador_suma(lista)
+            if aritme:
+                errores[col] = aritme
+        c += 1
+    return errores
+
 def totales(df):
-    "leer dataframe, regresar error"
+    "leer dataframe de tablas normales, regresar error"
 
     total = []
     subtotal = []
@@ -59,7 +88,7 @@ def totales(df):
         if 'Subtotal' in colum:
             subtotal.append(c)
         c += 1
-    print(total,subtotal)
+    # print(total,subtotal)
     errores = {}
     if total and not subtotal:
         c = 0
@@ -106,10 +135,13 @@ def evaluador_suma(lista):
         convertir = ['NS','NA','na','ns','Na','Ns','nA','nS']
         na = 'No'
         ns = 'No'
+        blanco = 0
         comprobar = 'No'
         desagregados = lista[1:]
         c = 0
         for valor in desagregados:
+            if valor == 'borra':
+                blanco += 1
             if valor in convertir:
                 if valor.lower() == 'na':
                     na = 'Si'
@@ -119,9 +151,22 @@ def evaluador_suma(lista):
                 desagregados[c] = 0
             if type(valor) == str and valor not in convertir:
                 desagregados[c] = 0
+                if valor == 'borra':
+                    pass
                 errores.append('Error: valor no permitido')
             c += 1
         suma = sum(desagregados)
+        if blanco > 0:
+            if total == 'borra':
+                blanco += 1
+                if len(lista) == blanco:
+                    return
+                else:
+                    errores.append('Hay espacios en blanco')
+                    return errores
+            if total != 'borra':
+                errores.append('Hay espacios en blanco')
+                return errores
         if total in convertir and suma > 0:
             errores.append('Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA')
             return errores

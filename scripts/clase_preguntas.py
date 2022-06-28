@@ -241,31 +241,33 @@ class clase_pregunta():
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df)
             self.tipo_T = 'Tabla'
         else: #para los que no son tablas
-            nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor)
-            self.tipo_T = 'No Tabla'
+            nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor,self)
+            
         return nuevo_df
    
     @staticmethod
-    def sino(df):
+    def sino(df1):
         "identificar preguntas de si, no, no se sabe"
         #buscar los tres terminos en el frame
+        df = df1.fillna(' ')
         b = 0
         palabras = ['Sí','No', 'No se'] #identificadores
         contador_columna = 0
         for palabra in palabras:
             c = 0 + contador_columna #variable para control de columna en la que se va iterando, ya que no se busca repetir la iteracion desde la primer columna luego de encontrar alguna palabra
-            for col in df.iloc[contador_columna:]: #iterar columnas desde donde se encontró la última palabra o desde cero
+            for col in df.iloc[:,contador_columna:]: #iterar columnas desde donde se encontró la última palabra o desde cero
+                
                 a = 0 #variable solo para poner el break si pasa lo de abajo
                 for valor in df[col].values:
-                    try: #por nan se hace esta excepcion, no se puede comparar string con nan
-                        if palabra in valor:
-                            contador_columna = c + 1 #Mas uno para iniciar desde siguiente columna
-                            a = 1
-                            b += 1
-                            break
-                    except:
-                        pass
+                    
+                    if palabra in str(valor):
+                        contador_columna = c + 1 #Mas uno para iniciar desde siguiente columna
+                        a = 1
+                        b += 1
+                        
+                        break
                 if a == 1:
+                    
                     break
                 c += 1
         if b != 3:
@@ -304,7 +306,7 @@ class clase_pregunta():
             return respuesta
         
     @staticmethod
-    def transformar_notab(df,mayor):
+    def transformar_notab(df,mayor,self):
         
         colyfil = clase_pregunta.imagen(df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
@@ -322,7 +324,9 @@ class clase_pregunta():
         
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
+        self.tipo_T = 'No Tabla'
         if forma[1] > 2 and len(c_espacios) > 2: #Esto solo aplicará para las preguntas que tienen desagregados
+            self.tipo_T = 'NT_Desagregados'
             nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
             nfram = {}
             nombres_c = list(nuevo_df.columns)
@@ -413,7 +417,7 @@ class clase_pregunta():
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
         #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
-        bus = ['1.', '1. ', '01.', '01. ','1',1]
+        bus = ['1.', '1. ', '01.', '01. ','1']
         comprobador = []
         val = {}
         
@@ -498,8 +502,9 @@ class clase_pregunta():
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
                     
                 nuevo_df = pd.DataFrame(val)
-        # print(comprobador)        
+        # print(comprobador,'com')        
         if not comprobador: #tabla de filas unicas
+            # print('hastaqui bien')
             nuevo_df = nuevo_df.fillna('borra')
             nombres = []
             for col in nuevo_df:
@@ -637,8 +642,8 @@ class clase_pregunta():
                 espacios.pop(ind) #borrar esos espacios extras debido a maal diseño de encabezado de tabla
         
         cant_tablas = df.iat[partes[0][0],partes[0][1]]
-        ver1 = [colyfil['fila'][i] for i in espacios]
-        print(cant_tablas,partes, espacios,ver1)
+        # ver1 = [colyfil['fila'][i] for i in espacios]
+        # print(cant_tablas,partes, espacios,ver1)
         can = cant_tablas[-3:-1]
         can = int(can) #siempre tiene que ser 2 o más
         # print(can)
