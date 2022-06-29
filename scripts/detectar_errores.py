@@ -42,20 +42,20 @@ def aritmeticos(cuestionario):
             if cuestionario[llave][pregunta].tipo_T == 'Tabla':
                 tablas = cuestionario[llave][pregunta].tablas
                 for tabla in tablas:
-                    er = totales(tablas[tabla])
+                    er = totales_fila(tablas[tabla])
                     if er:
                         errores[pregunta] = er
             if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
                 tablas = cuestionario[llave][pregunta].tablas
                 for tabla in tablas:
-                    er = totales_desagregados(tablas[tabla])
+                    er = totales_columna(tablas[tabla])
                     if er:
                         errores[pregunta] = er
     
     return errores
 
-def totales_desagregados(df1):
-    "leer dataframe de desagregados y regresar error"
+def totales_columna(df1):
+    "leer dataframe de desagregados por columna y regresar error"
     df = df1.fillna('...')
     errores = {}
     c = 0
@@ -69,14 +69,13 @@ def totales_desagregados(df1):
             ins = lista[-1] #es el total
             lista.insert(0, ins)
             lista.pop(-1)
-            print(lista)
             aritme = evaluador_suma(lista)
             if aritme:
                 errores[col] = aritme
         c += 1
     return errores
 
-def totales(df):
+def totales_fila(df):
     "leer dataframe de tablas normales, regresar error"
 
     total = []
@@ -107,8 +106,53 @@ def totales(df):
                 
                 c1 += 1
             c += 1
-            
-            
+    
+    if total and subtotal:
+        desagre_totales = [] #lista de los totales de desagregados
+        limites = []
+        for tota in total:
+
+            for sub in subtotal:
+                if sub > tota:
+                    limites.append(sub) #límites tendrá un numero por cada elemento mayor a cada total detectado
+                    break
+        c = 0
+        for limite in limites:#generar listas con columnas intermedias entre un total y su primer subtotal
+            if limite-total[c]>0:
+                lista_columnas =[i for i in range(total[c]+1,limite)]#el mas uno es porque necesitamos saber la columna a partir del total
+            else:
+                lista_columnas =[i for i in range(total[c],limite)]
+            desagre_totales.append(lista_columnas)
+            c += 1
+        #hacer listas de cada total desagregado con sus respectivos desagregados
+        for desa in desagre_totales:
+            ref = len(desa)
+            comp = []
+            c = 0
+            for sub in subtotal:
+                if c > 0:
+                    resta = sub - subtotal[c-1] - 1 #menos uno para quitar la columna del subtotal y que solo queden las de los desagregados
+                    comp.append(resta)
+                c += 1
+            cant_col = df.shape
+            resta = cant_col[1]-subtotal[-1] - 1
+            comp.append(resta) #porque en la iteración falta el último subtotal contra la cantidad de columnas
+            print(ref,comp)
+            for fila in list(df.iloc[:,0]):
+                
+                try:
+                    lista = list(df.iloc[c1, tot:total[c+1]])
+                except:
+                    lista = list(df.iloc[c1, tot:])
+                aritmetic = evaluador_suma(lista)
+                if aritmetic:
+                    errores[c1] = evaluador_suma(lista)
+                
+                c1 += 1
+            for val in comp:
+                if val == ref:
+                    
+                    
     return errores
 
 def evaluador_suma(lista):

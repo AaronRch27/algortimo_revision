@@ -438,6 +438,7 @@ class clase_pregunta():
                     c += 1
                 nuevo_df = nuevo_df.fillna('borra')
                 nombres = []
+                cn = 0
                 for col in nuevo_df:
                     #aqui se mete el proceso para los nombres de columnas
                     ap = list(nuevo_df[col])
@@ -482,9 +483,11 @@ class clase_pregunta():
                         nombre = [str(n) for n in nombre]
                         nombre = ' '.join(nombre)
                     # print(nombre,nombres)
+                    if nombre in val:
+                        nombre += str(cn)
                     if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
                         # if nombre in val:
-                        #     print('por nombre repetido')
+                        #     print('por nombre repetido',nombre)
                         # if condicion == 'juntar':
                         #     print('por condicion')
                         # if nombre in val and condicion == 'juntar':
@@ -500,7 +503,7 @@ class clase_pregunta():
                     if nombre not in val:
                        
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
-                    
+                    cn += 1
                 nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
         if not comprobador: #tabla de filas unicas
