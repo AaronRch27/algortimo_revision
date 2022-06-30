@@ -71,7 +71,10 @@ def totales_columna(df1):
             lista.pop(-1)
             aritme = evaluador_suma(lista)
             if aritme:
-                errores[col] = aritme
+                if col in errores:
+                    errores[col].append(aritme)
+                else:
+                    errores[col] = aritme
         c += 1
     return errores
 
@@ -137,20 +140,69 @@ def totales_fila(df):
             cant_col = df.shape
             resta = cant_col[1]-subtotal[-1] - 1
             comp.append(resta) #porque en la iteración falta el último subtotal contra la cantidad de columnas
-            print(ref,comp)
-            for fila in list(df.iloc[:,0]):
+            # print(ref,comp,desagre_totales)
+            #hacer las listas y enviar a la funcion evaluadora por los totales/desagregados en los subtotales
+            c2 = 1 #tiene que iniciar desde 1 porque no deseamos almacenar el valor del subtotal sino del que sigue
+            for des in desa:
                 
-                try:
-                    lista = list(df.iloc[c1, tot:total[c+1]])
-                except:
-                    lista = list(df.iloc[c1, tot:])
+                c = 0
+                for fila in list(df.iloc[:,0]):#primero se itera por fila del df
+                    lista_fila = list(df.iloc[c,:])#se saca la lista de los valores de la fila
+                    lista = [lista_fila[des]] #esta es la lista que eventualmente pasará a ser evaluda. Inicia con el total del desagregado y se complementa con los desagregados de cada subtotal
+                    c1 = 0
+                    for sub in subtotal:
+                        if sub > des: #para no trabajar con subtotales de otro total
+                            if comp[c1] == ref:
+                                agregar =  lista_fila[sub+c2]
+                                lista.append(agregar)
+                            if comp[c1] > ref:
+                                div = comp[c1]//ref
+                                for i in range(div):
+                                    aumento = ref*i
+                                    agregar = lista_fila[sub+c2+aumento]
+                                    lista.append(agregar)
+                            
+                        c1 += 1
+                    aritmetic = evaluador_suma(lista)
+                    if aritmetic:
+                        errores[c] = evaluador_suma(lista)
+                    c += 1
+                c2 += 1
+            #en el ciclo for que conluye, se revisan únicamente los desagregados del total
+        # a continuación se revisa el total con sus subtotales
+        c = 0
+        for fila in list(df.iloc[:,0]):
+            lista_fila = list(df.iloc[c,:])
+            for tot in total:
+                lista = [lista_fila[tot]]
+                for sub in subtotal:
+                    if sub > tot:
+                        lista.append(lista_fila[sub])
+                
                 aritmetic = evaluador_suma(lista)
                 if aritmetic:
-                    errores[c1] = evaluador_suma(lista)
-                
-                c1 += 1
-            for val in comp:
-                if val == ref:
+                    
+                    errores[c] = evaluador_suma(lista)
+            c += 1
+        # ahora se revisan los subtotales con sus desagregados
+        rsubtotal = subtotal+[]#un respaldo de subtotal por si se necesita después
+        subtotal += total #se juntan para validar todo de una vez, cada uno por separado con sus desagregados
+        subtotal.sort()
+        
+        c = 0
+        for fila in list(df.iloc[:,0]):
+            lista_fila = list(df.iloc[c,:])
+            for sub in subtotal:
+                try:
+                    lista = [lista_fila[sub:subtotal[c+1]]]
+                except:#para cuando llegue a la ultima columna de subtotales
+                    lista = [lista_fila[sub:]]
+                aritmetic = evaluador_suma(lista)
+                if aritmetic:
+                    errores[c] = evaluador_suma(lista)
+            c += 1
+        
+
                     
                     
     return errores
@@ -171,8 +223,8 @@ def evaluador_suma(lista):
      str. bien o mal dependiendo cómo se evalue la suma
 
     """
-    if len(lista) > 3:#posteriormente entará otra comprobación aquí
-        return 'No se puede evaluar'
+    if len(lista) < 3:#posteriormente entará otra comprobación aquí
+        return 
     else:
         errores = []
         total = lista[0]
@@ -195,9 +247,8 @@ def evaluador_suma(lista):
                 desagregados[c] = 0
             if type(valor) == str and valor not in convertir:
                 desagregados[c] = 0
-                if valor == 'borra':
-                    pass
-                errores.append('Error: valor no permitido')
+                if valor != 'borra':
+                    errores.append('Error: valor no permitido')
             c += 1
         suma = sum(desagregados)
         if blanco > 0:
