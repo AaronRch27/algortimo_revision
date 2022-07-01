@@ -1,1 +1,1 @@
-niguno hasta ahora
+Eliminar las autosumas de la validación por fila, no de las columnas
