@@ -29,30 +29,59 @@ def errores(cuestionario):
     error detectado
 
     """
-    aritme = aritmeticos(cuestionario)
-    print(aritme)
+    errores = iterar_cuestionario(cuestionario)
+    print(errores)
     return
 
 
-def aritmeticos(cuestionario):
-    "comprobar errores aritmeticos en cada tabla"
+def iterar_cuestionario(cuestionario):
+    "comprobar errores en cada pregunta"
     errores = {}
     for llave in cuestionario:
         for pregunta in cuestionario[llave]:
             if cuestionario[llave][pregunta].tipo_T == 'Tabla':
                 tablas = cuestionario[llave][pregunta].tablas
                 for tabla in tablas:
-                    er = totales_fila(tablas[tabla])
-                    if er:
-                        errores[pregunta] = er
+                    df = tablas[tabla].copy()#con copia para no afectar el frame original
+                    ndf = quitar_sinonosabe(df)
+                    aritmeticos = totales_fila(ndf)
+                    if aritmeticos:
+                        errores[pregunta] = aritmeticos
             if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
                 tablas = cuestionario[llave][pregunta].tablas
                 for tabla in tablas:
-                    er = totales_columna(tablas[tabla])
-                    if er:
-                        errores[pregunta] = er
+                    df = tablas[tabla].copy()
+                    ndf = quitar_sinonosabe(df)
+                    aritmeticos = totales_columna(ndf)
+                    if aritmeticos:
+                        errores[pregunta] = aritmeticos
     
     return errores
+
+def quitar_sinonosabe(df):
+    """
+    
+
+    Parameters
+    ----------
+    df : Dataframe. Es la tabla de la pregunta a evaluar
+
+    Returns
+    -------
+    df1: Dataframe. Regresa la tabla sin las columnas donde hay
+    una pregunta de tipo "1. si 2. no..." Generalmente son 
+    numerales 1, 2 y 9, pero aveces cambian e inclyen el 8 o el 3
+    La idea es eliminarlos porque no son adecuados en una validación 
+    de totales.
+
+    """
+    
+    for columna in df:
+        texto = columna.replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
+        comparar = '1.Sí/2.'
+        if comparar in texto:
+            del df[columna]
+    return df
 
 def totales_columna(df1):
     "leer dataframe de desagregados por columna y regresar error"
@@ -62,8 +91,14 @@ def totales_columna(df1):
     for col in df:
         lista = list(df[col])
         #eliminar nan
+        
         if '...' in lista:
-            lista.remove('...')
+            for element in range(len(lista)+1): #es necesario eliminar todos los '...' de la lista
+                try:#esto es porque la cantidad de '...' suele variar en las listas, como pueden tener uno o pueden tener muchos
+                    lista.remove('...')
+                except:
+                    pass
+        
         #aquí el primer valor suele ser el total, hay que pasarlo hasta el último para que se cumpla la utilidad de la función evaluar_suma
         if len(lista) > 2: #porque algunas columnas solo tendrán un valor, a esas no se les hace este proceso
             ins = lista[-1] #es el total
