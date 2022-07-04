@@ -39,24 +39,47 @@ def iterar_cuestionario(cuestionario):
     errores = {}
     for llave in cuestionario:
         for pregunta in cuestionario[llave]:
-            if cuestionario[llave][pregunta].tipo_T == 'Tabla':
-                tablas = cuestionario[llave][pregunta].tablas
-                for tabla in tablas:
-                    df = tablas[tabla].copy()#con copia para no afectar el frame original
-                    ndf = quitar_sinonosabe(df)
-                    aritmeticos = totales_fila(ndf)
+            tablas = cuestionario[llave][pregunta].tablas
+            for tabla in tablas:
+                df = tablas[tabla].copy()#con copia para no afectar el frame original
+                ndf = quitar_sinonosabe(df)
+                if cuestionario[llave][pregunta].tipo_T == 'Tabla':
+                    aritmeticos = totales_fila(ndf,cuestionario[llave][pregunta].autosuma)
                     if aritmeticos:
                         errores[pregunta] = aritmeticos
-            if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
-                tablas = cuestionario[llave][pregunta].tablas
-                for tabla in tablas:
-                    df = tablas[tabla].copy()
-                    ndf = quitar_sinonosabe(df)
+                if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
                     aritmeticos = totales_columna(ndf)
                     if aritmeticos:
                         errores[pregunta] = aritmeticos
+            #validación para todas las preguntas de si no no se sabe.
+                sinon = sinonosabe(ndf)
+                if sinon:
+                    if pregunta in errores:
+                        errores[pregunta].append(sinon)
+                    if pregunta not in errores:
+                        errores[pregunta] = sinon
     
     return errores
+
+def sinonosabe(df):
+    """
+    
+
+    Parameters
+    ----------
+    df : dataframe de la pregunta
+
+    Returns
+    -------
+    errores: lista. Regresa una lista con los errores detectados
+    sobre contestar a preguntas de si no no se sabe dentro de tablas,
+    así como las de no aplica (son preguntas en donde se debe dejar en
+    blanco el resto de la fila o contestar puro cero o na, cualquier 
+    otro valor es un error).
+
+    """
+    
+    return
 
 def quitar_sinonosabe(df):
     """
@@ -99,7 +122,7 @@ def totales_columna(df1):
                 except:
                     pass
         
-        #aquí el primer valor suele ser el total, hay que pasarlo hasta el último para que se cumpla la utilidad de la función evaluar_suma
+        #aquí el ultimo valor suele ser el total, hay que pasarlo hasta el principio para que se cumpla la utilidad de la función evaluar_suma
         if len(lista) > 2: #porque algunas columnas solo tendrán un valor, a esas no se les hace este proceso
             ins = lista[-1] #es el total
             lista.insert(0, ins)
@@ -113,9 +136,18 @@ def totales_columna(df1):
         c += 1
     return errores
 
-def totales_fila(df):
+def totales_fila(df,autosuma):
     "leer dataframe de tablas normales, regresar error"
-
+    errores = {}
+    #eliminar autosumas si las hay, y también validar columnas, aunque ten teoría aquí no deberia haber errores por las fórmulas de autosuma:
+    if autosuma == 'Si':
+        # validar columnas:
+        por_col = totales_columna(df)
+        if por_col:
+            errores['Columnas'] = por_col
+        bor = df.shape
+        df = df.drop([bor[0]-1],axis=0)
+        
     total = []
     subtotal = []
     c = 0
