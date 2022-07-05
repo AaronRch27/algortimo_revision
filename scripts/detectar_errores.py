@@ -52,16 +52,50 @@ def iterar_cuestionario(cuestionario):
                     if aritmeticos:
                         errores[pregunta] = aritmeticos
             #validación para todas las preguntas de si no no se sabe.
-                sinon = sinonosabe(ndf)
+                otra_copia = tablas[tabla].copy()
+                sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
                 if sinon:
                     if pregunta in errores:
-                        errores[pregunta].append(sinon)
+                        try:
+                            errores[pregunta].append(sinon)
+                        except:#si existe eror previo puede que no sea lista sin dict
+                            for k in sinon:
+                                if k in errores[pregunta]:
+                                    errores[pregunta][k] += sinon[k]
+                                if k not in errores[pregunta]:
+                                    errores[pregunta][k] = sinon[k]
                     if pregunta not in errores:
                         errores[pregunta] = sinon
-    
+            #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
+            consist = consistencia(cuestionario,pregunta) 
+            
+            # instrucciones_clas = cuestionario[llave][pregunta].instruccio_clasificadas #es un diccionario. La instrucción es la llave y su valor de clasificacion es una string
+            # for instruccion in instrucciones_clas:
+            #     if instrucciones_clas[instruccion] == 'consistencia':
+            #         comparacion = consistencia(cuestionario,instruccion,df)
     return errores
 
-def sinonosabe(df):
+def consistencia(cuestionario,pregunta):
+    """
+    
+
+    Parameters
+    ----------
+    cuestionario : Dict. Es el cuestionario generado luego de transofrmacion
+        Se requiere todo para poder navegar entre las distintas preguntas
+        para poder comparar relaciones entre ellas.
+    pregunta : objeto pregunta
+        La pregunta del cuestionario que será comparada con alguna otra.
+
+    Returns
+    -------
+    errores. Dict. Regresa un diccionario con errores encontrados en la
+        comparación de la pregunta.
+
+    """
+    return
+
+def sinonosabe(df,autosuma):
     """
     
 
@@ -71,15 +105,46 @@ def sinonosabe(df):
 
     Returns
     -------
-    errores: lista. Regresa una lista con los errores detectados
+    errores: dict. Regresa un diccionario con los errores detectados
     sobre contestar a preguntas de si no no se sabe dentro de tablas,
     así como las de no aplica (son preguntas en donde se debe dejar en
     blanco el resto de la fila o contestar puro cero o na, cualquier 
     otro valor es un error).
 
     """
-    
-    return
+    errores = {}
+    df = df.replace({'borra':0})
+    if autosuma == 'Si':#porque aquí también hay tablas con autosuma y esa fila no sirve para esta validacion
+        bor = df.shape
+        df = df.drop([bor[0]-1],axis=0)
+    separar = []
+    c = 0
+    for columna in df:
+        texto = columna.replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
+        comparar = '1.Sí/2.'
+        if comparar in texto:
+            separar.append(c)
+        c += 1
+    if not separar:#porque no se detectó columna que tenga lo que a esta validacion importa
+        return
+    c = 0
+    for sep in separar:
+        try:
+            nf = df.iloc[:,sep:separar[c+1]]
+        except:
+            nf = df.iloc[:,sep:]#para el ultimo valor de la lista, o si solo hay uno
+        lista = list(nf.iloc[:,0])
+        c1 = 0
+        for elemento in lista:
+            fila = list(nf.iloc[c1])
+            if fila[0] > 1:
+                if sum(fila[1:]) > 0:
+                    errores[c1] = ['Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero']
+            if fila[0] == 0:
+                errores[c1] = ['Faltó contestar pregunta de catálogo']
+            c1 += 1
+        c += 1
+    return errores
 
 def quitar_sinonosabe(df):
     """
