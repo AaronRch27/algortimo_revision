@@ -93,6 +93,7 @@ def consistencia(cuestionario,pregunta):
         comparación de la pregunta.
 
     """
+    errores = {}
     #primer paso es filtrado de instrucciones clasificadas
     clasificadas = pregunta.instruccio_clasificadas
     ins_cons = [] #instrucciones de consistencia
@@ -103,71 +104,72 @@ def consistencia(cuestionario,pregunta):
     if not ins_cons:#en caos de no existir no tiene caso seguir con esta validación
         return
     #segundo paso, otro filtro de instrucciones de comparacion mayor menor o igual
-    mayor = []
-    menor = []
-    igual = []
+
     for instru in ins_cons:
+        op = 0
         rev = instru.lower()
-        if 'mayor' in rev:
-            mayor.append(rev)
-            continue
-        if 'menor' in rev:
-            menor.append(rev)
-            continue
         if 'igual' in rev:
-            igual.append(rev)
-            continue
-    if mayor:
-        for ins in mayor:
-            mapa = mapeo(pregunta.nombre,1,ins)#mapear
-            # valores = conseguir(cuestionario,mapa)#conseguir
-            # comp = comparar(valores,mapa)#comparar y generar errores
-    if menor:
-        for ins in menor:
-            mapa = mapeo(pregunta.nombre,2,ins)#mapear
+            op = 1
+
+        if 'menor' in rev:
+            op = 2
+
+        if 'mayor' in rev:
+            op = 3
             
-    if igual:
-        for ins in igual:
-            mapa = mapeo(pregunta.nombre,3,ins)#mapear
+        if op == 0:
+            errores['Consistencia'] = [f'Instrucción "{instru[:28]}..." no se pudo validar,revisar ']
+            pass
+        
+        if op > 0: 
+            comparar = pregunta_comparar(pregunta.nombre,instru)
+        #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
+            pregunta_c = buscar_pregunta(cuestionario,comparar)
+            if pregunta_c == 'No':#agregar advertencia para errores
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append('No se pudo comparar prcon pregunta '+comparar)
+                else:
+                    errores['Consistencia'] = ['No se pudo comparar prcon pregunta '+comparar]
+            else:#analizar las tablas de cada pregunta 
+                
+                
     
         
-    return
+    return errores
 
-def mapeo(nombre,op,instruccion):
+def buscar_pregunta(cuestionario,nombre):
+    "Busca la prgeunta por nombre(str) en el cuestionario(dict), regrea objeto pregunta"
+    for seccion in cuestionario:
+        for pregunta in cuestionario[seccion]:
+            if pregunta == nombre:
+                return cuestionario[seccion][pregunta]
+    return 'No'
+
+def pregunta_comparar(nombre,instruccion):
     """
     
 
     Parameters
     ----------
     nombre : str, nombre de la pregunta
-    lista : list, lista de listas netgrada por lista en orden:
-        mayor, menor igual
 
     Returns
     -------
-    mapa. Dict, diccionario con nombre de la pregunta a la que se tiene
-    que comparar, así como un número del 1 al 3 para saber si es mayor(1),
-    menor(2) o igual(3). Finalmente el nombre de la columna o columnas
-    a comparar y si es solo la parte de autosumas.
+    str con el nombre de la pregunta a la que se tiene 
+    que hacer la comparacion
 
     """
-    mapa = {}
-    mapa['operacion'] = op
-    texto = instruccion.split('igual')#divide en dos la cadena, la primera parte es sobre la pregunta actual y la segunda es para la pregunta a comparar
-    #detectar a qué partes de la tabla de la pregunta van a ser comparadas
-    p_actual = texto[0]
-    p_comparar = texto[1]
-    p_suma_a = p_actual.count('suma')
-    p_suma_c = p_comparar.count('suma')
-    actual = ''
-    if p_suma_a > 0 and 'numeral' not in p_actual:#habrá que llenar de muchos condicionales para comprobar
-        actual = 'autosuma'
-    a_columna = ''
-    if 'cada columna' in p_actual:
-        a_columna = 'todas'
-    mapa['p_act(fila,columna)'] = (actual,a_columna)
-    print(mapa)
-    return mapa
+    tx = instruccion.split('de la pregunta')
+    tx1 = tx[1]
+    interes = tx1.split()
+    pregunta_c = interes[0]
+    if 'anterior' in pregunta_c:
+        nnn = nombre.split('.')
+        resta = int(nnn[1]) - 1
+        return f'{nnn[0]}.{resta}'
+    else:
+        return pregunta_c
+
 
 def sinonosabe(df,autosuma):
     """
