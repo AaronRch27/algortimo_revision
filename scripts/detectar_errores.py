@@ -127,15 +127,25 @@ def consistencia(cuestionario,pregunta):
             pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
             if pregunta_c == 'No':#agregar advertencia para errores
                 if 'Consistencia' in errores:
-                    errores['Consistencia'].append('No se pudo comparar prcon pregunta '+comparar)
+                    errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
                 else:
-                    errores['Consistencia'] = ['No se pudo comparar prcon pregunta '+comparar]
+                    errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
             else:#analizar las tablas de cada pregunta 
                 #comprobar que solo tienen una tabla
                 if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
                     tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
                     tablaC = pregunta_c.tablas[1]
-                    compatible = analizarT(tablaA,tablaC)    
+                    compatible = analizarT(tablaA,tablaC)
+                    if not compatible:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
+                        else:
+                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
+                            continue
+                    #de llegar aquí, entonces sí hay compatibilidad
+                    print(compatible)
+                
+                #algo distinto para más de una tabla
         
     return errores
 
@@ -151,10 +161,11 @@ def analizarT(t1,t2):
     filasc = [''.join(car for car in str(fila) if car not in borr).lower() for fila in filasc]
     col_a = [''.join(car for car in str(fila) if car not in borr).lower() for fila in col_a]
     col_c = [''.join(car for car in str(fila) if car not in borr).lower() for fila in col_c]
-    print(filasa,filasc,col_a,col_c)
+    # print(filasa,filasc,col_a,col_c)
     medidor = [0,0,0,0] #cada cero pertenece a cada iteracion, el máximo señala cuál es la mejor manera de comparar tablas(filaxfila,filaxcolumna,columnaxfila.columnaxcolumna)
     indices = [[],[],[],[]] #indices de la pregunta a comprarar
     ind_a = [[],[],[],[]] #indices de la pregunta actual
+    respuesta = [['fila','fila'],['fila','columna'],['columna','fila'],['columna','columna']]
     c1 = 0 
     for elm in filasa:
         c = -1
@@ -198,9 +209,20 @@ def analizarT(t1,t2):
                 indices[3].append(c)
                 ind_a[3].append(c1)
         c1 += 1
+    res = {}
+    r = max(medidor)
+    if r == 0: #por si nada es comparable
+        return []
+    c = 0 
+    for val in medidor:
+        if val == r:
+            break
+        c += 1
+    res['rel'] = respuesta[c]
+    res['p_act'] = ind_a[c]
+    res['p_comp'] = indices[c]
     
-    print(medidor,indices,ind_a)
-    return
+    return res
 
 def buscar_pregunta(cuestionario,nombre):
     "Busca la prgeunta por nombre(str) en el cuestionario(dict), regrea objeto pregunta"
