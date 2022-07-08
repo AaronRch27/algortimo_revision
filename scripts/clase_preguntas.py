@@ -23,7 +23,8 @@ class clase_pregunta():
         self.nombre_lit = dataframe.iat[0,0]
         self.pregunta = dataframe.iat[0,1]
         borrar = '- ' #solia remover el punto también pero entocnes hay preguntas con el mismo nombre como 1.11 y 11.1
-        self.nombre = ''.join(c for c in self.nombre_lit if c not in borrar)
+        bnom = ''.join(c for c in self.nombre_lit if c not in borrar)
+        self.nombre = bnom[:-1] #para quitar el ultimo punto nada más
         self.dfraw = dataframe
         self.tablas = clase_pregunta.tablas(self,dataframe)
         self.metadata = clase_pregunta.meta(self,dataframe,modelos)

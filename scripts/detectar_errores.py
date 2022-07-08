@@ -116,26 +116,91 @@ def consistencia(cuestionario,pregunta):
 
         if 'mayor' in rev:
             op = 3
-            
+  
         if op == 0:
             errores['Consistencia'] = [f'Instrucción "{instru[:28]}..." no se pudo validar,revisar ']
             pass
         
         if op > 0: 
-            comparar = pregunta_comparar(pregunta.nombre,instru)
+            comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
-            pregunta_c = buscar_pregunta(cuestionario,comparar)
+            pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
             if pregunta_c == 'No':#agregar advertencia para errores
                 if 'Consistencia' in errores:
                     errores['Consistencia'].append('No se pudo comparar prcon pregunta '+comparar)
                 else:
                     errores['Consistencia'] = ['No se pudo comparar prcon pregunta '+comparar]
             else:#analizar las tablas de cada pregunta 
-                
-                
-    
+                #comprobar que solo tienen una tabla
+                if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
+                    tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
+                    tablaC = pregunta_c.tablas[1]
+                    compatible = analizarT(tablaA,tablaC)    
         
     return errores
+
+def analizarT(t1,t2):
+    "t1 y 2 son dataframes. Regresa dict con filas o columnas compatibles(su indice)"
+    filasa = list(t1.iloc[:,0])
+    filasc = list(t2.iloc[:,0])
+    col_a = list(t1.columns)
+    col_c = list(t2.columns)
+    #pasarlos a minuscula, quitar saltos de linea
+    borr = ['\n']
+    filasa = [''.join(car for car in str(fila) if car not in borr).lower() for fila in filasa]
+    filasc = [''.join(car for car in str(fila) if car not in borr).lower() for fila in filasc]
+    col_a = [''.join(car for car in str(fila) if car not in borr).lower() for fila in col_a]
+    col_c = [''.join(car for car in str(fila) if car not in borr).lower() for fila in col_c]
+    print(filasa,filasc,col_a,col_c)
+    medidor = [0,0,0,0] #cada cero pertenece a cada iteracion, el máximo señala cuál es la mejor manera de comparar tablas(filaxfila,filaxcolumna,columnaxfila.columnaxcolumna)
+    indices = [[],[],[],[]] #indices de la pregunta a comprarar
+    ind_a = [[],[],[],[]] #indices de la pregunta actual
+    c1 = 0 
+    for elm in filasa:
+        c = -1
+        for val in filasc:
+            c +=1
+            if len(val) < 3 or len(elm) < 3: #son valores pequeños que no merece el esfuerzo comparar
+                continue
+            if val in elm or elm in val:
+                medidor[0] += 1
+                indices[0].append(c)
+                ind_a[0].append(c1)
+        c = -1
+        for val in col_c:
+            c +=1
+            if len(val) < 3 or len(elm) < 3:
+                continue
+            if val in elm or elm in val:
+                medidor[1] += 1
+                indices[1].append(c)
+                ind_a[1].append(c1)
+        c1 += 1
+        
+    c1 = 0
+    for elm in col_a:
+        c = -1
+        for val in filasc:
+            c += 1
+            if len(val) < 3 or len(elm) < 3:
+                continue
+            if val in elm or elm in val:
+                medidor[2] += 1
+                indices[2].append(c)
+                ind_a[2].append(c1)
+        c = -1
+        for val in col_c:
+            c += 1
+            if len(val) < 3 or len(elm) < 3:
+                continue
+            if val in elm or elm in val:
+                medidor[3] += 1
+                indices[3].append(c)
+                ind_a[3].append(c1)
+        c1 += 1
+    
+    print(medidor,indices,ind_a)
+    return
 
 def buscar_pregunta(cuestionario,nombre):
     "Busca la prgeunta por nombre(str) en el cuestionario(dict), regrea objeto pregunta"
