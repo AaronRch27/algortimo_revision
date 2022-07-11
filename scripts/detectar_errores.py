@@ -138,16 +138,131 @@ def consistencia(cuestionario,pregunta):
                     compatible = analizarT(tablaA,tablaC)
                     if not compatible:
                         if 'Consistencia' in errores:
-                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
+                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
+                            continue
                         else:
-                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
+                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                             continue
                     #de llegar aquí, entonces sí hay compatibilidad
                     print(compatible)
+                    #conseguir los valores de la tabla en pregunta actual
+                    valor_conseguir_p_actual = compatible['rel'][0]
+                    instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
+                    tipo_val_pa = analizarIns(instruc_ambas[0])
+                    pa_val = lista_valores(tablaA,
+                                           pregunta.autosuma,
+                                           tipo_val_pa,compatible['p_act'],
+                                           valor_conseguir_p_actual)
+        
+                    #para conseguir valores de pregunta a comparar    
+                    valor_conseguir_p_comp = compatible['rel'][1]
+                    tipo_val_pc = analizarIns(instruc_ambas[1])
+                    pc_val = lista_valores(tablaC,
+                                           pregunta_c.autosuma,
+                                           tipo_val_pc,compatible['p_comp'],
+                                           valor_conseguir_p_comp)
+                    
+                    print(pc_val,pa_val)
+                    #hacer la comparacion entre ambas listas, quiza iterar por cada valor a comparar. La idea es que sean la misma cantidad de ellos. Usar función de NS pero dentro de una nueva función de comparación
                 
                 #algo distinto para más de una tabla
         
     return errores
+
+def NS(comparador,referente):
+    """
+    
+
+    Parameters
+    ----------
+    comparador : str--es el valor de pregunta actual
+        el valor detectado en excel, y que tiene dentro ns o na.
+    referente : str-- es el valor de pregunta a comparar
+        el valor detectado en excel, y que tiene dentro ns o na.
+
+    Returns
+    -------
+    int
+        regresa 1 si es error, 0 si todo en orden.
+    
+    Nota: No alterar el orden de los condicionales, ya que eso puede 
+    generar errores
+
+    """
+    n = ['NS','ns']
+    a = ['NA','na']
+    
+    if referente in a and comparador in a:
+        return 0
+    if referente in a and comparador not in a:
+        return 1
+    if referente not in a and comparador in a:
+        return 1 #Error discutido con Paulina sobre NA´s 
+    if referente in n and comparador in n:
+        return 0
+    if referente == 0 and comparador in n:
+        return 1
+    if referente in n and comparador >= 0:
+        return 1
+    if referente > 0 and comparador in n:
+        return 0
+
+def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
+    """
+    
+
+    Parameters
+    ----------
+    tabla: dataframe de la tabla
+    autousma: str. Puede ser Si o No, para saber si la tabla tiene autosuma 
+        al final de sus columnas.
+    valor_conseguir : string. puede ser columna o fila
+    indices : lista. Contiene los indices para extraer los valores,
+        se toma en cuenta el primero y el último para generar 
+        la lista. 
+    tipo_val: str. para saber si se busca una autosuma o suma de 
+        numeral. 
+
+    Returns
+    -------
+    lista. list. Lista con los valores que serán comparados
+
+    """
+    #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
+    if valor_conseguir == 'columna':
+                        
+        if autosuma == 'Si' and tipo_val == 'autosuma':
+            pa_val = list(tabla.iloc[-1,:])
+    
+        if autosuma == 'No' and tipo_val == 'autosuma':
+            pa_val = []
+            for col in tabla:
+                lista = list(tabla[col])
+                nlis = [x for x in lista if type(x) != str] #para quitar registros que no son numeros
+                suma = sum(nlis)
+                pa_val.append(suma)
+        if tipo_val == 'unifila':
+            pa_val = list(tabla.iloc[0,:])
+    
+    # if valor_conseguir_p_actual == 'fila':
+    
+        
+    pa_val = pa_val[indices[0]:indices[-1]+1]
+    return pa_val
+    
+
+def analizarIns(texto):
+    "analiza el texto de la instrucción, regresa string de autosuma o lista de numerales param hacer la comparación"
+
+    if 'numeral' in texto:
+        #obtener el numeral o numerales a sumar en la tabla
+        return
+    if 'suma' in texto:
+        
+        return'autosuma'    
+    
+    if 'suma' not in texto and 'numeral' not in texto:
+        return 'unifila'
 
 def analizarT(t1,t2):
     "t1 y 2 son dataframes. Regresa dict con filas o columnas compatibles(su indice)"
@@ -177,6 +292,8 @@ def analizarT(t1,t2):
                 medidor[0] += 1
                 indices[0].append(c)
                 ind_a[0].append(c1)
+                break
+                
         c = -1
         for val in col_c:
             c +=1
@@ -186,6 +303,7 @@ def analizarT(t1,t2):
                 medidor[1] += 1
                 indices[1].append(c)
                 ind_a[1].append(c1)
+                break
         c1 += 1
         
     c1 = 0
@@ -199,6 +317,7 @@ def analizarT(t1,t2):
                 medidor[2] += 1
                 indices[2].append(c)
                 ind_a[2].append(c1)
+                break
         c = -1
         for val in col_c:
             c += 1
@@ -208,6 +327,7 @@ def analizarT(t1,t2):
                 medidor[3] += 1
                 indices[3].append(c)
                 ind_a[3].append(c1)
+                break
         c1 += 1
     res = {}
     r = max(medidor)
