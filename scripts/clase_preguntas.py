@@ -239,7 +239,7 @@ class clase_pregunta():
         nuevo_df = clase_pregunta.borrar_col(df)
         
         if mayor > 15: #Se trata de una tabla
-            nuevo_df = clase_pregunta.transformar_tabla(nuevo_df)
+            nuevo_df = clase_pregunta.transformar_tabla(nuevo_df,self)
             self.tipo_T = 'Tabla'
         else: #para los que no son tablas
             nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor,self)
@@ -394,7 +394,7 @@ class clase_pregunta():
         return nuevo_df
     
     @staticmethod
-    def transformar_tabla(nuevo_df):
+    def transformar_tabla(nuevo_df,self):
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
         colyfil = clase_pregunta.imagen(nuevo_df)
@@ -440,6 +440,7 @@ class clase_pregunta():
                 nuevo_df = nuevo_df.fillna('borra')
                 nombres = []
                 cn = 0
+                self.encabezado_tabla = nuevo_df.iloc[0:index,:]
                 for col in nuevo_df:
                     #aqui se mete el proceso para los nombres de columnas
                     ap = list(nuevo_df[col])
