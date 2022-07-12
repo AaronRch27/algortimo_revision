@@ -68,11 +68,20 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            if consist:
+                
+                if pregunta in errores:
+                    try:
+                        errores[pregunta].append(consist)
+                    except:#si existe eror previo puede que no sea lista sin dict
+                        for k in consist:
+                            if k in errores[pregunta]:
+                                errores[pregunta][k] += consist[k]
+                            if k not in errores[pregunta]:
+                                errores[pregunta][k] = consist[k]
+                if pregunta not in errores:
+                    errores[pregunta] = consist
             
-            # instrucciones_clas = cuestionario[llave][pregunta].instruccio_clasificadas #es un diccionario. La instrucción es la llave y su valor de clasificacion es una string
-            # for instruccion in instrucciones_clas:
-            #     if instrucciones_clas[instruccion] == 'consistencia':
-            #         comparacion = consistencia(cuestionario,instruccion,df)
     return errores
 
 def consistencia(cuestionario,pregunta):
@@ -161,12 +170,81 @@ def consistencia(cuestionario,pregunta):
                                            pregunta_c.autosuma,
                                            tipo_val_pc,compatible['p_comp'],
                                            valor_conseguir_p_comp)
+                    #comparar ambas listas según su operación
+                    err = comparacion_consistencia(op,pa_val,pc_val,comparar)
+                    if err:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] += err['Consistencia']
+                            continue
+                        else:
+                            errores = err
+                            continue
                     
-                    print(pc_val,pa_val)
                     #hacer la comparacion entre ambas listas, quiza iterar por cada valor a comparar. La idea es que sean la misma cantidad de ellos. Usar función de NS pero dentro de una nueva función de comparación
                 
                 #algo distinto para más de una tabla
         
+    return errores
+
+def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
+    """
+    
+
+    Parameters
+    ----------
+    operacion : int = 1 igual, 2 menor o igual, 3 mayor o igual
+        
+    comparador : list. lista de los comparadores
+        
+    referente : list lista de valores referentes para comparar
+    
+    nombre_ref : str. nombre de la pregunta con la que se va a comparar 
+        la pregunta actual
+        
+
+    Returns
+    -------
+    errores : dict. diccionario con los errores encontrados en la 
+        comparacion
+
+    """
+    errores = {}
+    #primer error comparar que ambas listas sean del mismo tamaño
+    if len(comparador) != len(referente):
+        errores['Consistencia'] = ['No es posible comparar por error de lectura en tabla']
+        return errores
+    c = 0
+    for comp in comparador:
+        ref = referente[c]
+        if type(comp) == str or type(ref) == str: #si hay NS o NA
+            nsa = NS(comp,ref)
+            if nsa == 1:
+                errores['Consistencia'] = [f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}']
+                return errores
+            if nsa  == 0:#quiere decir que es correcto el registro
+                continue
+        #cualquier comparación se basa en que sean iguales, por eso es lo primero
+        if operacion == 1:
+            if comp == ref:
+                continue
+            else:
+                errores['Consistencia'] = [f'El valor no es menor o igual que pregunta {nombre_ref}']
+                return errores
+        #sino son iguales entonces se hacen las operaciones
+        if operacion == 2:
+            if comp <= ref:
+                continue
+            else:
+                errores['Consistencia'] = [f'El valor no es menor o igual que pregunta {nombre_ref}']
+                return errores
+        if operacion == 3:
+            if comp >= ref:
+                continue
+            else:
+                errores['Consistencia'] = [f'El valor no es mayor o igual que pregunta {nombre_ref}']
+                return errores
+        
+        c +=1
     return errores
 
 def NS(comparador,referente):
