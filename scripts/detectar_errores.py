@@ -67,7 +67,9 @@ def iterar_cuestionario(cuestionario):
                     if pregunta not in errores:
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
+            print('hasta aquie vba bien ',pregunta)
             consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            
             if consist:
                 
                 if pregunta in errores:
@@ -322,7 +324,8 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
         if tipo_val == 'unifila':
             pa_val = list(tabla.iloc[0,:])
     
-    # if valor_conseguir_p_actual == 'fila':
+    # if valor_conseguir == 'fila':
+        
     
         
     pa_val = pa_val[indices[0]:indices[-1]+1]
