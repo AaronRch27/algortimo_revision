@@ -1,0 +1,9 @@
+El tema para identificar el index de las tablas. Suelen poner una numeración 
+por separado siempre al inicio de la tabla. La única recomendación en este 
+sentido es que esa numeración esté en su propia celda, mientras que el nombre
+del numeral se ponga en otra, aunque tenga desagregados. En las tablas de
+tipo de delito lo hacen muy bien, seguir bajo ese formato.
+
+
+El ancho de las tablas que van por partes debe ser el mismo, para ejemplificar
+lo que no se debe hacer, está pregunta 2.37 de M3 en procuración de justicia.

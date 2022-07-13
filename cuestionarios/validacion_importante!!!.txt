@@ -1,0 +1,124 @@
+
+
+
+
+
+correr docker para instalar repositorio:
+docker run -d -p 80:80 docker/getting-started
+
+
+procu ajustes:
+
+Para M1 p 2.27 se tiene que anular el segundo total con espacios, resolución manual fácil: error en 6.1 (referencia circular), 3.4 y 3.5, 6.17 no tiene nada (Porque escibieron total con espacio). 5.10 malas coordenadas(se puede arreglar bajando las columnas)
+M2 no tuvo problemas en ejecución del código : 1.13 (se arregla manualmente la tabla y ya está)- Reconozco que siguieron las recomendaciones que les dimmos, y por lo tanto no hay casi problemas con secciones 9 en adelante (las del año pasado estaban muy complicadas para el algortimo)
+M3 1.11 borrar prellenado, 2.1 no puede con eso, error en programación, 1.12 no valida todos los totales, [3.38, 4.41] arreglar desde codigo, 5.1 descombinar y acomodar encabezados de columnas
+['2.1.-', ' ', '2.7.-', '2.33.-', '2.35.-', '2.37.-', '2.38.-', '2.39.-', '2.43.-', '2.45.-', '3.4.-', '3.5.-', '4.1.-', '4.7.-', '4.35.-', '4.36.-', '4.37.-', '4.40.-', '4.41.-', '4.45.-', '4.47.-', '5.4.-', '5.5.-', '5.6.-']
+
+M4 no tuvo problemas en ejecución del código: dividir  1.2 para que se valide lo de abajo, 2.10 2.12 total con espacio
+
+M3 08/04 ['1.11.-', ' ', '2.33.-', '2.35.-', '2.37.-', '2.38.-', '2.39.-', '2.43.-', '3.5.-', '4.35.-', '4.36.-', '4.37.-', '4.40.-', '4.41.-', '4.45.-', '5.5.-', '5.6.-']
+
+otro
+expedientes de los tres pestañas pero no en control de expedientes, generar lista o base de estas
+lista de expedientes que no se cumple cantidad de actores y repsonsables, marcar en amarillo columna de actores y repsonsables los que no coincidan
+duracion_proceso pasarlo de a cuerdo al id a la base buena
+
+IDs de expedientes que no están dentro de estructura:
+9429 ceros en responsables
+resolucion todos están
+actores todos están
+Compararlo pero con los que enviaron ellos! los tres pestañas
+
+revisar fechas si son antes del 2000 están mal, poner fecha,nombre de variable y el id de las cuatro pestañas, de ambos archivos respuesta en dos exceles
+sacar ids de censos que no corresponde conteo de actores y responsables
+filtrar en ambos archivos control expediente, todos los ids que registraron sala superior en tp_sala = especializada y en amb_asunto = federal y en variable federal_entidad federativa = federal sacar los ids que cumplan con este registro
+revisar si los que tienen na en resuluciones de estructura, que sean los mismos que los de segunda columna que envié
+y hacer lo de duracion de proceso, y los que se repiten dejar la ultima fecha para pegar
+SUP-CLT-3/2017
+
+
+m3 bloquear listas de p1 izquierda, pero meter listas desplegables en etidades, todo precarga va libre
+4.1, dejar libres los desagregados
+
+
+en censo Otro especifique desde el id en la misma de actores clase_actor = otro especifique en censo para poner lista de ids y esa variable actores y responsables
+filtrar en ambos archivos control expediente, todos los ids que registraron sala superior en tp_sala = especializada y en amb_asunto = federal y en variable federal_entidad federativa = federal sacar los ids que cumplan con este registro
+
+
+
+
+Dudas de procu
+cuál es la relación de consistencia entre solicitantes y requeridos? (p. 4.33)
+5.4 consistencia ?? 2.19, 2.31, 3.4, 3.8, 4.20, 4.33, 5.8
+consistencia es de cifras fijarse si es cero o ns no pueden contestar otra cosa__ solo para columna total
+si es mayor a uno debe ser mayor a uno no importa que sea igual o no, si es cero debe ser cero y si es NS debe ser ns, eso es consistencia
+
+4.39 fue un tema con los condicionales pero ya, si los registros son buenos no hay error
+igual 4.40-- revisarlas con codigo después 5.6 tambien
+
+
+
+Pendiente : hacer revision para tablas de delitos con 01_Tabla_Víctimas_Delitos
+Notas para algortimo revisión:
+Se leeran dos archivos, el de año anterior y el actual para comparación.
+Se hará mismo proceso que en algortimo de validación, para el tema de lectura del archivo. 
+se clasificará la pregunta y se almacenarán sus respuestas en un dataframe por cada pregunta.
+	Los nuevos dataframes no tendrán espacios de celdas combinadas 
+	Se construirán objetos pregunta--- ver esquema
+Se clasificarán las instrucciones para saber qué validaciones se harán. 
+Se detectarán totales y subtotales para hacer validaciones aritméticas
+si hay pregunta de año anterior se hace comparación.
+Integrar revisión sobre tablas tipo de delito---tipo de víctima
+Los errores detectados deben salir en el formato de observaciones.
+
+Pasos:
+
+El primer paso es hacer convertir todo el cuestionario a un diccionario con las preguntas en objetos
+Seundo paso que puede ser integrado con el primero es realizar las intrucciones.
+Es opcional debido a que es bueno escanear primero el cuestionario de año anterior pero a ese no validar con las instrucciones
+Tercer paso concatenado al segundo, detectar donde algo no se cumple y almacenarlo en una variable para al final generar lista de errores, que idealmente sería expresada en el formato de observaciones
+
+
+
+
+
+
+Derechos humanos prueba con validaciones.
+M1 preguntas con problemas: 6.1, 2.1
+Soluciones sencillas que podemos hacer: 2.1, 6.1
+3.1---arreglar en diseño--presupuesto a la izquierda
+616 y 17 Total tiene espacio
+
+M2 revisar 8.4 tabla 1 y 2
+5.26, 6.29 respuestas en tabla están en formato de texto. Modificar
+10.1, 10.3 modificar total para buena validacion nosotros
+
+
+Seguridad publica
+M1 1.32 revisar en codigo---revisado
+
+M2 2-3 4.4 editar pregunta y ver
+4.10 debe ser editada y hacerla por separado para poner subtotales en todo lo de kilos y borrar las otras.
+Seccion 4 hay varias que tendrán que hacerse por separado 
+
+3-3 tarda mucho en leerlo, Preguntas donde no de hizo nada: ['.', '8.1.-']
+6.6, 6.16 Total con espacio
+10.5 tabla 9,10,19,20,29,30,--- revisado
+
+
+Correcciones para algoritmo:
+Tablas de delitos--- última fila, validación---completo
+incorporar lo del 25% en los otros
+Homologar validaciones----
+bloquear en donde inicia con catálogos o las preguntas de si no no sabe concluya la sección bloquear todo si está vacío
+Mensajes de error M2 procu p 3.11 usar esa redacción y que desaparezca al poner un comentario en caso del 25%, pero no olvidar
+el mensaje para los errores de suma de los desagregados de delitos.
+1.32 condicional para prgeuntas cortas, resaltar en amarillos las instrucciones que no se cumplen
+en justificación siempre poner que ignoren nuestro mensaje luego de justificar M2 secc 3 3.12
+
+
+
+
+
+
+
