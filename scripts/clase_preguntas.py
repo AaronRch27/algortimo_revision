@@ -418,17 +418,18 @@ class clase_pregunta():
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
         #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
-        bus = ['1.', '1. ', '01.', '01. ','1']
+        bus = ['1.', '1. ', '01.', '01. ','1','01.01']
         comprobador = []
         val = {}
         
-        # print('por encontrar', nuevo_df['Unnamed: 2'].values)
+        # print('por encontrar', list(nuevo_df['Unnamed: 2']))
         for uno in bus:
+            
             if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                 break
             # print(nuevo_df.columns)
-            if uno in nuevo_df['Unnamed: 2'].values: #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
-                
+            if uno in list(nuevo_df['Unnamed: 2']): #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
+                self.T_tip = 'index'
                 comprobador.append(1)
                 c = 0
                 index = 0
@@ -444,56 +445,16 @@ class clase_pregunta():
                 for col in nuevo_df:
                     #aqui se mete el proceso para los nombres de columnas
                     ap = list(nuevo_df[col])
-                    nnn = []
-                    condicion = 0
-                    # print(ap[0])
-                    
-                    intermedios = []
-                    for valor in ap[0:index-1]: #comprobar si hay algún valor en tabla de encabezado
-                        if valor != 'borra':
-                            intermedios.append(valor)
-                            
-                    if ap[0] != 'borra' or intermedios:
-                        if ap[0] != 'borra' and intermedios:
-                            # if intermedios[0] != ap[0]:
-                            nnn = intermedios + [ap[0]]
-                            # else: #condicionales para evitar la copia de nombre en columna Total
-                            #     nnn = intermedios
-                        else:
-                            for filaN in ap[0:index]:
-                                if filaN != 'borra':
-                                    nnn.append(filaN)
-                    if nnn:
-                        # print(nnn, intermedios)
-                        nombres = nnn
-                    if not nombres:
-                        nombre = str(ap[index-1])
-                   
+                    nombres = ap[:index]
+                    if 'borra' in nombres:
+                        veces = nombres.count('borra')
+                        for vez in range(veces):
+                            nombres.remove('borra')
                     if nombres:
-                        if len(nombres) > 1:
-                            if ap[index-1] == 'borra' and not intermedios:
-                                
-                                nombre = [str(n) for n in nombres[0:-1]]
-                                condicion = 'juntar'
-                            if ap[index-1] == 'borra' and intermedios:
-                                nombre = [str(n) for n in nombres]
-                            else:
-                                nombre = [str(n) for n in nombres[0:-1]]+[ap[index-1]]
-                        else:
-                            nombre = str(nombres[0])
-                        
-                        nombre = [str(n) for n in nombre]
-                        nombre = ' '.join(nombre)
-                    # print(nombre,nombres)
+                        nombre = nombres[-1]
                     if nombre in val:
-                        nombre += str(cn)
-                    if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
-                        # if nombre in val:
-                        #     print('por nombre repetido',nombre)
-                        # if condicion == 'juntar':
-                        #     print('por condicion')
-                        # if nombre in val and condicion == 'juntar':
-                        #     print('por nombre y condicion')
+                        nombre += '1'
+                    if not nombres: #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
                         ind = 0
                         nl = []
                         for key in val:
@@ -502,46 +463,29 @@ class clase_pregunta():
                             nl.append(str(elem) + ' '+ str(ap[index:][ind]))
                             ind += 1
                         val[nombre] = nl
+                    
                     if nombre not in val:
-                       
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
                     cn += 1
                 nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
         if not comprobador: #tabla de filas unicas
             # print('hastaqui bien')
+            self.T_tip = 'unifila'
             nuevo_df = nuevo_df.fillna('borra')
             nombres = []
             for col in nuevo_df:
                 ap = list(nuevo_df[col])
-                nnn = []
-                condicion = 0
-                # print(ap[0])
-                if ap[0] != 'borra':
-                    for filaN in ap[0:-1]:
-                        if filaN != 'borra':
-                            nnn.append(filaN)
-                if nnn:
-                    
-                    nombres = nnn
-                if not nombres:
-                    try:
-                        nombre = str(ap[-2])
-                    except:
-                        nombre = str(ap[-1])
-               
+                nombres = ap[:-1]
+                if 'borra' in nombres:
+                    veces = nombres.count('borra')
+                    for vez in range(veces):
+                        nombres.remove('borra')
                 if nombres:
-                    if len(nombres) > 1:
-                        if ap[-1] == 'borra':
-                            nombre = [str(n) for n in nombres[0:-1]]
-                            condicion = 'juntar'
-                        else:
-                            nombre = [str(n) for n in nombres[0:-1]]+[ap[-2]]
-                    else:
-                        nombre = str(nombres[0])
-                    
-                    nombre = [str(n) for n in nombre]
-                    nombre = ' '.join(nombre)
+                    nombre = str(nombres[-1])
+                
+                if nombre in val:
+                    nombre += '1'
                 # print(nombre,nombres)
                 # if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
                 #     ind = 0

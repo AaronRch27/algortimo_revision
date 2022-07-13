@@ -67,7 +67,7 @@ def iterar_cuestionario(cuestionario):
                     if pregunta not in errores:
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
-            print('hasta aquie vba bien ',pregunta)
+            # print('hasta aquie vba bien ',pregunta)
             consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
             
             if consist:
@@ -117,6 +117,7 @@ def consistencia(cuestionario,pregunta):
     #segundo paso, otro filtro de instrucciones de comparacion mayor menor o igual
 
     for instru in ins_cons:
+        # print(instru)
         op = 0
         rev = instru.lower()
         if 'igual' in rev:
@@ -129,7 +130,7 @@ def consistencia(cuestionario,pregunta):
             op = 3
   
         if op == 0:
-            errores['Consistencia'] = [f'Instrucción "{instru[:28]}..." no se pudo validar,revisar ']
+            errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
             pass
         
         if op > 0: 
@@ -160,6 +161,9 @@ def consistencia(cuestionario,pregunta):
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
                     tipo_val_pa = analizarIns(instruc_ambas[0])
+                    if pregunta.T_tip == 'index' and 0 in compatible['p_act']:
+                        compatible['p_act'].remove(0)
+                        
                     pa_val = lista_valores(tablaA,
                                            pregunta.autosuma,
                                            tipo_val_pa,compatible['p_act'],
@@ -168,6 +172,8 @@ def consistencia(cuestionario,pregunta):
                     #para conseguir valores de pregunta a comparar    
                     valor_conseguir_p_comp = compatible['rel'][1]
                     tipo_val_pc = analizarIns(instruc_ambas[1])
+                    if pregunta_c.T_tip == 'index' and 0 in compatible['p_comp']:
+                        compatible['p_comp'].remove(0)
                     pc_val = lista_valores(tablaC,
                                            pregunta_c.autosuma,
                                            tipo_val_pc,compatible['p_comp'],
@@ -215,8 +221,9 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
     if len(comparador) != len(referente):
         errores['Consistencia'] = ['No es posible comparar por error de lectura en tabla']
         return errores
-    c = 0
+    c = -1
     for comp in comparador:
+        c +=1
         ref = referente[c]
         if type(comp) == str or type(ref) == str: #si hay NS o NA
             nsa = NS(comp,ref)
@@ -246,7 +253,7 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
                 errores['Consistencia'] = [f'El valor no es mayor o igual que pregunta {nombre_ref}']
                 return errores
         
-        c +=1
+        
     return errores
 
 def NS(comparador,referente):
@@ -323,6 +330,9 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
                 pa_val.append(suma)
         if tipo_val == 'unifila':
             pa_val = list(tabla.iloc[0,:])
+        
+        if type(tipo_val) == int:
+            pa_val = list(tabla.iloc[tipo_val-1,:])
     
     # if valor_conseguir == 'fila':
         
@@ -333,11 +343,15 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
     
 
 def analizarIns(texto):
-    "analiza el texto de la instrucción, regresa string de autosuma o lista de numerales param hacer la comparación"
+    "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
 
     if 'numeral' in texto:
         #obtener el numeral o numerales a sumar en la tabla
-        return
+        if not 'suma' in texto:
+            nt = texto.split('numeral')
+            nt1 = nt[1].split()
+            numeral = int(nt1[0])
+        return numeral
     if 'suma' in texto:
         
         return'autosuma'    
@@ -351,8 +365,8 @@ def analizarT(t1,t2):
     filasc = list(t2.iloc[:,0])
     col_a = list(t1.columns)
     col_c = list(t2.columns)
-    #pasarlos a minuscula, quitar saltos de linea
-    borr = ['\n']
+    #pasarlos a minuscula, quitar saltos de linea y espacios
+    borr = ['\n',' ']
     filasa = [''.join(car for car in str(fila) if car not in borr).lower() for fila in filasa]
     filasc = [''.join(car for car in str(fila) if car not in borr).lower() for fila in filasc]
     col_a = [''.join(car for car in str(fila) if car not in borr).lower() for fila in col_a]
@@ -362,55 +376,31 @@ def analizarT(t1,t2):
     indices = [[],[],[],[]] #indices de la pregunta a comprarar
     ind_a = [[],[],[],[]] #indices de la pregunta actual
     respuesta = [['fila','fila'],['fila','columna'],['columna','fila'],['columna','columna']]
-    c1 = 0 
-    for elm in filasa:
-        c = -1
-        for val in filasc:
-            c +=1
-            if len(val) < 3 or len(elm) < 3: #son valores pequeños que no merece el esfuerzo comparar
-                continue
-            if val in elm or elm in val:
-                medidor[0] += 1
-                indices[0].append(c)
-                ind_a[0].append(c1)
-                break
-                
-        c = -1
-        for val in col_c:
-            c +=1
-            if len(val) < 3 or len(elm) < 3:
-                continue
-            if val in elm or elm in val:
-                medidor[1] += 1
-                indices[1].append(c)
-                ind_a[1].append(c1)
-                break
+    c1 = 0     
+    for elm in filasc:
+        # if elm in filasa:
+        #     medidor[0] += 1
+        #     indices[0].append(c1)
+        #     ind_a[0].append(filasa.index(elm))
+        if elm in col_a:
+            medidor[2] += 1
+            indices[2].append(c1)
+            ind_a[2].append(col_a.index(elm))
         c1 += 1
-        
     c1 = 0
-    for elm in col_a:
-        c = -1
-        for val in filasc:
-            c += 1
-            if len(val) < 3 or len(elm) < 3:
-                continue
-            if val in elm or elm in val:
-                medidor[2] += 1
-                indices[2].append(c)
-                ind_a[2].append(c1)
-                break
-        c = -1
-        for val in col_c:
-            c += 1
-            if len(val) < 3 or len(elm) < 3:
-                continue
-            if val in elm or elm in val:
-                medidor[3] += 1
-                indices[3].append(c)
-                ind_a[3].append(c1)
-                break
+    for elm in col_c:
+        if elm in filasa:
+            medidor[1] += 1
+            indices[1].append(c1)
+            ind_a[1].append(filasa.index(elm))
+        if elm in col_a:
+            medidor[3] += 1
+            indices[3].append(c1)
+            ind_a[3].append(col_a.index(elm))
         c1 += 1
+
     res = {}
+    
     r = max(medidor)
     if r == 0: #por si nada es comparable
         return []
