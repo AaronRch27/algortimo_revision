@@ -221,8 +221,9 @@ class clase_pregunta():
         df = clase_pregunta.borrar_S(self,df)
         medidas = df.shape
         # print(medidas)
-        if medidas[0] < 10: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
+        if medidas[0] < 25: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
             probar = clase_pregunta.sino(df)  
+            
             if probar:
                 return probar
         # nombres_iniciales = list(df.columns)
@@ -404,7 +405,6 @@ class clase_pregunta():
         
         inf =  [i for i in range(0,colyfil['fila'][espacios[0]+1])]
         sup = [i for i in range(colyfil['fila'][espacios[1]]+1,len(nuevo_df['Unnamed: 2'].values))]
-        
         nuevo_df = nuevo_df.drop(inf + sup, axis=0)
 
         try:
@@ -421,7 +421,6 @@ class clase_pregunta():
         bus = ['1.', '1. ', '01.', '01. ','1','01.01']
         comprobador = []
         val = {}
-        
         # print('por encontrar', list(nuevo_df['Unnamed: 2']))
         for uno in bus:
             
@@ -453,7 +452,11 @@ class clase_pregunta():
                     if nombres:
                         nombre = nombres[-1]
                     if nombre in val:
-                        nombre += '1'
+                        while True:
+                            if nombre in val:
+                                nombre += '1'
+                            if nombre not in val:
+                                break
                     if not nombres: #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
                         ind = 0
                         nl = []
@@ -483,7 +486,7 @@ class clase_pregunta():
                         nombres.remove('borra')
                 if nombres:
                     nombre = str(nombres[-1])
-                
+
                 if nombre in val:
                     nombre += '1'
                 # print(nombre,nombres)
