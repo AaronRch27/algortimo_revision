@@ -39,6 +39,7 @@ def iterar_cuestionario(cuestionario):
     errores = {}
     for llave in cuestionario:
         for pregunta in cuestionario[llave]:
+            print('comienzo de errores ', pregunta)
             tablas = cuestionario[llave][pregunta].tablas
             for tabla in tablas:
                 df = tablas[tabla].copy()#con copia para no afectar el frame original
@@ -135,6 +136,16 @@ def consistencia(cuestionario,pregunta):
         
         if op > 0: 
             comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
+            if comparar == 'misma':#La validacion es con la misma pregunta
+                tablas = pregunta.tablas
+                for tabla in tablas:
+                    relmisma = relaciones_mis(tablas[tabla])
+                    if relmisma:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] += relmisma['Consistencia']
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] = relmisma['Consistencia']
+                        return errores
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
             pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
             if pregunta_c == 'No':#agregar advertencia para errores
@@ -192,6 +203,46 @@ def consistencia(cuestionario,pregunta):
                 
                 #algo distinto para más de una tabla
         
+    return errores
+
+def relaciones_mis(tabla):
+    """
+    
+
+    Parameters
+    ----------
+    tabla : dataframe de la tabla.
+
+    Returns
+    -------
+    errores. dict. Con los errores detectados. Estas relaciones entre
+        la misma pregunta siempre son de solo una forma. La suma de los
+        desagregados no necesariamente debe ser igual al total, más bien
+        ningún desagregado debe ser mayor al total. Eso es lo que
+        importa en esta validacion.
+
+    """
+    errores = {}
+    #identificar total
+    col = tabla.columns
+    ind = 0
+    for c in col:
+        if c == 'Total':
+            break
+        ind += 1
+    if ind == 0:
+        errores['Consistencia'] = ['No se pudo comprar internamente porque no hay columna de Total']
+        return errores
+    filas = tabla.shape
+    for fila in range(filas[0]):
+        lista = tabla.iloc[fila-1,ind:]
+        total = lista[0]
+        for val in lista[1:]:
+            if val > total:
+                if 'consistencia' in errores:
+                    errores['Consistencia'].append(f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total')
+                if 'consistencia' not in errores:
+                    errores['Consistencia'] = [f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total']
     return errores
 
 def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
@@ -278,7 +329,12 @@ def NS(comparador,referente):
     """
     n = ['NS','ns']
     a = ['NA','na']
-    
+    br = ['borra']
+    print(referente,comparador)
+    if referente == comparador:
+        return 0
+    if referente in br and comparador in br:
+        return 0
     if referente in a and comparador in a:
         return 0
     if referente in a and comparador not in a:
@@ -333,11 +389,19 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
         
         if type(tipo_val) == int:
             pa_val = list(tabla.iloc[tipo_val-1,:])
+        
+        
     
     # if valor_conseguir == 'fila':
         
-    
-        
+
+    if not indices:
+        if 'Total' in list(tabla.columns):
+            pa_val = list(tabla['Total'])
+            return pa_val
+        else:
+            pa_val = list(tabla.iloc[:,1])  
+            return pa_val
     pa_val = pa_val[indices[0]:indices[-1]+1]
     return pa_val
     
@@ -437,7 +501,10 @@ def pregunta_comparar(nombre,instruccion):
     que hacer la comparacion
 
     """
-    tx = instruccion.split('de la pregunta')
+    print(instruccion)
+    if 'la pregunta' not in instruccion:#preguntas cuya suma no debe ser necesariamente igual a sus desagregados, sino simplemente el valor decada desgregado no debe ser mayor al del total
+        return 'misma' 
+    tx = instruccion.split('la pregunta')
     tx1 = tx[1]
     interes = tx1.split()
     pregunta_c = interes[0]
@@ -467,7 +534,7 @@ def sinonosabe(df,autosuma):
 
     """
     errores = {}
-    df = df.replace({'borra':0})
+    df = df.replace({'borra':0,'NS':0,'NA':0})
     if autosuma == 'Si':#porque aquí también hay tablas con autosuma y esa fila no sirve para esta validacion
         bor = df.shape
         df = df.drop([bor[0]-1],axis=0)
