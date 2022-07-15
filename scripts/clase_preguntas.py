@@ -219,6 +219,10 @@ class clase_pregunta():
         
         df = df.reset_index(drop=True)
         df = clase_pregunta.borrar_S(self,df)
+        try:
+            clase_pregunta.autosuma
+        except:#esta excepcion es porque aveces no se genera el atributo autosuma en borrarS
+            self.autosuma = 'No'
         medidas = df.shape
         # print(medidas)
         if medidas[0] < 25: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
@@ -450,7 +454,7 @@ class clase_pregunta():
                         for vez in range(veces):
                             nombres.remove('borra')
                     if nombres:
-                        nombre = nombres[-1]
+                        nombre = str(nombres[-1])
                     if nombre in val:
                         while True:
                             if nombre in val:

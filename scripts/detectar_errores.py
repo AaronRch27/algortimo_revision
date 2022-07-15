@@ -42,6 +42,8 @@ def iterar_cuestionario(cuestionario):
             print('comienzo de errores ', pregunta)
             tablas = cuestionario[llave][pregunta].tablas
             for tabla in tablas:
+                if type(tablas[tabla]) == str:
+                    continue
                 df = tablas[tabla].copy()#con copia para no afectar el frame original
                 ndf = quitar_sinonosabe(df)
                 if cuestionario[llave][pregunta].tipo_T == 'Tabla':
@@ -69,8 +71,10 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'error instruccion':[f'Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -330,7 +334,7 @@ def NS(comparador,referente):
     n = ['NS','ns']
     a = ['NA','na']
     br = ['borra']
-    print(referente,comparador)
+    
     if referente == comparador:
         return 0
     if referente in br and comparador in br:
@@ -501,7 +505,7 @@ def pregunta_comparar(nombre,instruccion):
     que hacer la comparacion
 
     """
-    print(instruccion)
+    # print(instruccion)
     if 'la pregunta' not in instruccion:#preguntas cuya suma no debe ser necesariamente igual a sus desagregados, sino simplemente el valor decada desgregado no debe ser mayor al del total
         return 'misma' 
     tx = instruccion.split('la pregunta')
@@ -541,7 +545,7 @@ def sinonosabe(df,autosuma):
     separar = []
     c = 0
     for columna in df:
-        texto = columna.replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
+        texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
         comparar = '1.Sí/2.'
         if comparar in texto:
             separar.append(c)
@@ -586,7 +590,7 @@ def quitar_sinonosabe(df):
     """
     
     for columna in df:
-        texto = columna.replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
+        texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
         comparar = '1.Sí/2.'
         if comparar in texto:
             del df[columna]
@@ -638,9 +642,9 @@ def totales_fila(df,autosuma):
     subtotal = []
     c = 0
     for colum in df:
-        if 'Total' in colum:
+        if 'Total' in str(colum):
             total.append(c)
-        if 'Subtotal' in colum:
+        if 'Subtotal' in str(colum):
             subtotal.append(c)
         c += 1
     # print(total,subtotal)
