@@ -30,9 +30,36 @@ def errores(cuestionario):
 
     """
     errores = iterar_cuestionario(cuestionario)
+    #depurar
+    errores = depurar(errores)
     print(errores)
     return
 
+def depurar(errores):
+    "borrar algunos errores de acuerdo a instrucciones de validacion"
+    
+    for pregunta in errores:
+        
+        if 'borraAr' in errores[pregunta]:
+            
+            del errores[pregunta]['borraAr']
+            for k in errores[pregunta]:
+                if type(k) == int:
+                    c = 0
+                    for error in errores[pregunta][k]:
+                        if error == 'Error: Suma de desagregados no coincide con el total':
+                            c += 1
+                    if c > 0:
+                        for vez in range(c):
+                            errores[pregunta][k].remove('Error: Suma de desagregados no coincide con el total')
+            borrar=[]
+            for k in errores[pregunta]: 
+                if not errores[pregunta][k]:
+                    borrar.append(k)
+            for ele in borrar:
+                del errores[pregunta][ele]
+    
+    return errores
 
 def iterar_cuestionario(cuestionario):
     "comprobar errores en cada pregunta"
@@ -71,10 +98,10 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'error instruccion':[f'Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # try:
+            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'error instruccion':[f'Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -140,6 +167,7 @@ def consistencia(cuestionario,pregunta):
         
         if op > 0: 
             comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
+
             if comparar == 'misma':#La validacion es con la misma pregunta
                 tablas = pregunta.tablas
                 for tabla in tablas:
@@ -149,6 +177,10 @@ def consistencia(cuestionario,pregunta):
                             errores['Consistencia'] += relmisma['Consistencia']
                         if 'Consistencia' in errores:
                             errores['Consistencia'] = relmisma['Consistencia']
+                        errores['borraAr'] = 1
+                        return errores
+                    if not relmisma:
+                        errores['borraAr'] = 1
                         return errores
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
             pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
@@ -226,9 +258,11 @@ def relaciones_mis(tabla):
         importa en esta validacion.
 
     """
+    tablac = tabla.copy()
+    tablac = tablac.replace({'borra':0})
     errores = {}
     #identificar total
-    col = tabla.columns
+    col = tablac.columns
     ind = 0
     for c in col:
         if c == 'Total':
@@ -237,9 +271,9 @@ def relaciones_mis(tabla):
     if ind == 0:
         errores['Consistencia'] = ['No se pudo comprar internamente porque no hay columna de Total']
         return errores
-    filas = tabla.shape
+    filas = tablac.shape
     for fila in range(filas[0]):
-        lista = tabla.iloc[fila-1,ind:]
+        lista = tablac.iloc[fila-1,ind:]
         total = lista[0]
         for val in lista[1:]:
             if val > total:
@@ -538,6 +572,7 @@ def sinonosabe(df,autosuma):
 
     """
     errores = {}
+    indices = list(df.iloc[:,0])
     df = df.replace({'borra':0,'NS':0,'NA':0})
     if autosuma == 'Si':#porque aquí también hay tablas con autosuma y esa fila no sirve para esta validacion
         bor = df.shape
@@ -552,6 +587,7 @@ def sinonosabe(df,autosuma):
         c += 1
     if not separar:#porque no se detectó columna que tenga lo que a esta validacion importa
         return
+    
     c = 0
     for sep in separar:
         try:
@@ -565,7 +601,7 @@ def sinonosabe(df,autosuma):
             if fila[0] > 1:
                 if sum(fila[1:]) > 0:
                     errores[c1] = ['Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero']
-            if fila[0] == 0:
+            if fila[0] == 0 and 'borra' not in indices[c1]:
                 errores[c1] = ['Faltó contestar pregunta de catálogo']
             c1 += 1
         c += 1
