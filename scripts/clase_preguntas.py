@@ -220,7 +220,7 @@ class clase_pregunta():
         df = df.reset_index(drop=True)
         df = clase_pregunta.borrar_S(self,df)
         try:
-            clase_pregunta.autosuma
+            self.autosuma
         except:#esta excepcion es porque aveces no se genera el atributo autosuma en borrarS
             self.autosuma = 'No'
         medidas = df.shape
@@ -492,7 +492,11 @@ class clase_pregunta():
                     nombre = str(nombres[-1])
 
                 if nombre in val:
-                    nombre += '1'
+                    while True:
+                        if nombre in val:
+                            nombre += '1'
+                        if nombre not in val:
+                            break
                 # print(nombre,nombres)
                 # if nombre in val or condicion == 'juntar': #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
                 #     ind = 0
@@ -647,7 +651,8 @@ class clase_pregunta():
                     break
                 c += 1
         for br in borrar:
-            del nuevas_columnas[br]
+            if br  in nuevas_columnas:
+                del nuevas_columnas[br]
         add = pd.DataFrame(nuevas_columnas)
         nuevo_df = pd.concat([df,add],axis=1)
         nuevo_df = nuevo_df.drop([partes[0][0]],axis=0)

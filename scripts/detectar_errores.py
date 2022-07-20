@@ -4,9 +4,9 @@ Created on Fri Jun 17 14:27:15 2022
 
 @author: AARON.RAMIREZ
 """
+from FO import generar_formato
 
-
-def errores(cuestionario):
+def errores(cuestionario,nombre):
     """
     
 
@@ -32,8 +32,10 @@ def errores(cuestionario):
     errores = iterar_cuestionario(cuestionario)
     #depurar
     errores = depurar(errores)
+    censo = ''#queda pendiente el nombre
+    generar_formato(errores, censo, nombre)
     print(errores)
-    return
+    return errores
 
 def depurar(errores):
     "borrar algunos errores de acuerdo a instrucciones de validacion"
@@ -98,10 +100,10 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            # try:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'error instruccion':[f'Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'error instruccion':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -162,7 +164,7 @@ def consistencia(cuestionario,pregunta):
             op = 3
   
         if op == 0:
-            errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
+            # errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
             pass
         
         if op > 0: 
@@ -196,6 +198,8 @@ def consistencia(cuestionario,pregunta):
                     tablaC = pregunta_c.tablas[1]
                     compatible = analizarT(tablaA,tablaC)
                     if not compatible:
+                        #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
+                        compatible = analizar_tex_instr(tablaA,tablaC,instru)
                         if 'Consistencia' in errores:
                             errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
                             continue
@@ -203,7 +207,7 @@ def consistencia(cuestionario,pregunta):
                             errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                             continue
                     #de llegar aquí, entonces sí hay compatibilidad
-                    print(compatible)
+                    # print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -240,6 +244,17 @@ def consistencia(cuestionario,pregunta):
                 #algo distinto para más de una tabla
         
     return errores
+
+def analizar_tex_instr(t1,t2,tx):
+    "t1 y 2 son dataframes, tx es string instruccion. Regresa dict con filas o columnas compatibles(su indice)"    
+    res = {}
+
+
+    # res['rel'] = respuesta[c]#list [columna,columna]
+    # res['p_act'] = ind_a[c] #list [0,1,2...]
+    # res['p_comp'] = indices[c] #list [0,1,2...]
+    
+    return res
 
 def relaciones_mis(tabla):
     """
@@ -446,13 +461,14 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
 
 def analizarIns(texto):
     "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
-
+    # print(texto)
     if 'numeral' in texto:
         #obtener el numeral o numerales a sumar en la tabla
         if not 'suma' in texto:
             nt = texto.split('numeral')
             nt1 = nt[1].split()
             numeral = int(nt1[0])
+        # if 'suma'
         return numeral
     if 'suma' in texto:
         
