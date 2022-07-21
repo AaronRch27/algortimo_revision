@@ -29,17 +29,17 @@ def errores(cuestionario,nombre):
     error detectado
 
     """
-    errores = iterar_cuestionario(cuestionario)
+    errores, censo = iterar_cuestionario(cuestionario)
     #depurar
     errores = depurar(errores)
-    censo = ''#queda pendiente el nombre
+
     generar_formato(errores, censo, nombre)
     print(errores)
     return errores
 
+
 def depurar(errores):
     "borrar algunos errores de acuerdo a instrucciones de validacion"
-    
     for pregunta in errores:
         
         if 'borraAr' in errores[pregunta]:
@@ -66,10 +66,17 @@ def depurar(errores):
 def iterar_cuestionario(cuestionario):
     "comprobar errores en cada pregunta"
     errores = {}
+    censo = ''
     for llave in cuestionario:
         for pregunta in cuestionario[llave]:
             print('comienzo de errores ', pregunta)
             tablas = cuestionario[llave][pregunta].tablas
+            if censo == '':
+                conseguir_censo = cuestionario[llave][pregunta].dfraw
+                nombres = list(conseguir_censo.columns)
+                censo = nombres[1]
+                if censo == 'Unnamed: 1':
+                    censo = 'Hoja de pruebas'
             for tabla in tablas:
                 if type(tablas[tabla]) == str:
                     continue
@@ -103,7 +110,7 @@ def iterar_cuestionario(cuestionario):
             try:
                 consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
             except:
-                consist = {'error instruccion':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -118,7 +125,7 @@ def iterar_cuestionario(cuestionario):
                 if pregunta not in errores:
                     errores[pregunta] = consist
             
-    return errores
+    return errores, censo
 
 def consistencia(cuestionario,pregunta):
     """
@@ -341,7 +348,7 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
             if comp == ref:
                 continue
             else:
-                errores['Consistencia'] = [f'El valor no es menor o igual que pregunta {nombre_ref}']
+                errores['Consistencia'] = [f'El valor no es igual que pregunta {nombre_ref}']
                 return errores
         #sino son iguales entonces se hacen las operaciones
         if operacion == 2:
@@ -614,11 +621,27 @@ def sinonosabe(df,autosuma):
         c1 = 0
         for elemento in lista:
             fila = list(nf.iloc[c1])
-            if fila[0] > 1:
-                if sum(fila[1:]) > 0:
-                    errores[c1] = ['Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero']
-            if fila[0] == 0 and 'borra' not in indices[c1]:
-                errores[c1] = ['Faltó contestar pregunta de catálogo']
+            #comporbar si hay strings
+            for val in fila:
+                if type(val) == str:
+                    string = 1
+                    break
+                else:
+                    string = 0
+      
+            if string == 0:#porque aveces solo son filas con texto, normalmente en preguntas unifila
+                if fila[0] > 1:
+                    if sum(fila[1:]) > 0:
+                        errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
+                if fila[0] == 0 and 'borra' not in indices[c1]:
+                    errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+            if string == 1:
+                if fila[0] > 1:
+                    if fila[1:]:
+                        errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
+                if fila[0] == 0 and 'borra' not in indices[c1]:
+                    errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                
             c1 += 1
         c += 1
     return errores
@@ -671,10 +694,10 @@ def totales_columna(df1):
             lista.pop(-1)
             aritme = evaluador_suma(lista)
             if aritme:
-                if col in errores:
-                    errores[col].append(aritme)
+                if 'aritmetico' in errores:
+                    errores['aritmetico'].append(aritme)
                 else:
-                    errores[col] = aritme
+                    errores['aritmetico'] = aritme
         c += 1
     return errores
 
@@ -829,7 +852,7 @@ def evaluador_suma(lista):
 
     Returns
     -------
-     str. bien o mal dependiendo cómo se evalue la suma
+     lista de errores
 
     """
     if len(lista) < 3:#posteriormente entará otra comprobación aquí
