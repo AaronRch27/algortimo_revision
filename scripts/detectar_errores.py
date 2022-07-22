@@ -74,8 +74,9 @@ def iterar_cuestionario(cuestionario):
             if censo == '':
                 conseguir_censo = cuestionario[llave][pregunta].dfraw
                 nombres = list(conseguir_censo.columns)
-                censo = nombres[1]
-                if censo == 'Unnamed: 1':
+                rem_le = ['0','1','2','3','4','5','6','7','8','9','\n']
+                censo = ''.join(cut for cut in nombres[1] if cut not in rem_le)
+                if 'Unnamed' in censo:
                     censo = 'Hoja de pruebas'
             for tabla in tablas:
                 if type(tablas[tabla]) == str:
@@ -338,9 +339,19 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
         ref = referente[c]
         if type(comp) == str or type(ref) == str: #si hay NS o NA
             nsa = NS(comp,ref)
+            #convertir a cero para poder hacer comparaciones posteriores
+            if type(comp) == str:
+                comp = 0
+            if type(ref) == str:
+                ref = 0
+                
             if nsa == 1:
-                errores['Consistencia'] = [f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}']
-                return errores
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append(f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}')
+                else:
+                    errores['Consistencia'] = [f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}']
+                    continue
+                # return errores
             if nsa  == 0:#quiere decir que es correcto el registro
                 continue
         #cualquier comparación se basa en que sean iguales, por eso es lo primero
@@ -348,21 +359,30 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
             if comp == ref:
                 continue
             else:
-                errores['Consistencia'] = [f'El valor no es igual que pregunta {nombre_ref}']
-                return errores
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append(f'El valor {comp} no es igual que pregunta {nombre_ref}')
+                else:
+                    errores['Consistencia'] = [f'El valor {comp} no es igual que pregunta {nombre_ref}']
+                # return errores
         #sino son iguales entonces se hacen las operaciones
         if operacion == 2:
             if comp <= ref:
                 continue
             else:
-                errores['Consistencia'] = [f'El valor no es menor o igual que pregunta {nombre_ref}']
-                return errores
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append(f'El valor {comp} no es menor o igual que pregunta {nombre_ref}')
+                else:
+                    errores['Consistencia'] = [f'El valor {comp} no es menor o igual que pregunta {nombre_ref}']
+                # return errores
         if operacion == 3:
             if comp >= ref:
                 continue
             else:
-                errores['Consistencia'] = [f'El valor no es mayor o igual que pregunta {nombre_ref}']
-                return errores
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append(f'El valor {comp} no es mayor o igual que pregunta {nombre_ref}')
+                else:
+                    errores['Consistencia'] = [f'El valor {comp} no es mayor o igual que pregunta {nombre_ref}']
+                # return errores
         
         
     return errores

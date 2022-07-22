@@ -43,7 +43,7 @@ def generar_formato(errores,censo,nombre):
             pass
         for inconsistencia in errores[pregunta]:
             if inconsistencia == 'Consistencia':
-                desc = ''.join(errores[pregunta][inconsistencia])
+                desc = ' : '.join(errores[pregunta][inconsistencia])
                 escribir(pregunta,'Errores de consistencia entre preguntas',
                          desc,fila,pagina)
                 fila += 1

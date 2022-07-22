@@ -13,7 +13,7 @@ import joblib
 #No olvidar marcar los complementos con el inicio de su pregunta y un ## donde termina
 
 
-libro = 'Copia de CNDHF_2022_M1_CONJUNTO.xlsx'
+libro = 'pregunta_prueba.xlsx'
 # libro = 'pregunta_prueba.xlsx'
 
 #Estos modelos solo funcionan si se cargan desde el main, es decir, este script kjunto con tokenizar,clasificadorBayes 
@@ -44,7 +44,7 @@ for pag in pags:
     if pag not in saltar:
         data = pd.read_excel(libro,sheet_name=pag,engine='openpyxl',
                              na_values=[''], keep_default_na=False)
-        aver = procesar(data, pag,modelos)
-        cuestionario[pag] = aver
+        seccion = procesar(data, pag,modelos)
+        cuestionario[pag] = seccion
 
 list_erro = errores(cuestionario,libro)
