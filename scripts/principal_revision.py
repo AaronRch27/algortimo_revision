@@ -26,7 +26,7 @@ def preguntas(hopan):
     for i in hopan['Unnamed: 0']:
         a = pd.isna(hopan['Unnamed: 0'][c])
         if a == False:
-            if hopan.iat[0,c] != '.':
+            if hopan.iat[c,0] != '.':
                 ind.append(c)
         c+=1
     

@@ -712,7 +712,7 @@ def totales_columna(df1):
             ins = lista[-1] #es el total
             lista.insert(0, ins)
             lista.pop(-1)
-            aritme = evaluador_suma(lista)
+            aritme = evaluador_suma(lista,f'columna {col}')
             if aritme:
                 if 'aritmetico' in errores:
                     errores['aritmetico'].append(aritme)
@@ -727,7 +727,7 @@ def totales_fila(df,autosuma):
     #eliminar autosumas si las hay, y también validar columnas, aunque ten teoría aquí no deberia haber errores por las fórmulas de autosuma:
     if autosuma == 'Si':
         # validar columnas:
-        por_col = totales_columna(df)
+        por_col = totales_columna(df.iloc[:,1:])
         if por_col:
             errores['Columnas'] = por_col
         bor = df.shape
@@ -743,7 +743,7 @@ def totales_fila(df,autosuma):
             subtotal.append(c)
         c += 1
     # print(total,subtotal)
-    errores = {}
+    
     if total and not subtotal:
         c = 0
         for tot in total:
@@ -755,9 +755,9 @@ def totales_fila(df,autosuma):
                     lista = list(df.iloc[c1, tot:total[c+1]])
                 except:
                     lista = list(df.iloc[c1, tot:])
-                aritmetic = evaluador_suma(lista)
+                aritmetic = evaluador_suma(lista,f'fila{c1+1}')
                 if aritmetic:
-                    errores[c1] = evaluador_suma(lista)
+                    errores[c1] = aritmetic
                 
                 c1 += 1
             c += 1
@@ -815,9 +815,10 @@ def totales_fila(df,autosuma):
                                     lista.append(agregar)
                             
                         c1 += 1
-                    aritmetic = evaluador_suma(lista)
+                    aritmetic = evaluador_suma(lista,f'fila{c+1}')
+                    
                     if aritmetic:
-                        errores[c] = evaluador_suma(lista)
+                        errores[c] = aritmetic
                     c += 1
                 c2 += 1
             #en el ciclo for que conluye, se revisan únicamente los desagregados del total
@@ -831,27 +832,30 @@ def totales_fila(df,autosuma):
                     if sub > tot:
                         lista.append(lista_fila[sub])
                 
-                aritmetic = evaluador_suma(lista)
+                aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
                     
-                    errores[c] = evaluador_suma(lista)
+                    errores[c] = aritmetic
             c += 1
         # ahora se revisan los subtotales con sus desagregados
         rsubtotal = subtotal+[]#un respaldo de subtotal por si se necesita después
         subtotal += total #se juntan para validar todo de una vez, cada uno por separado con sus desagregados
         subtotal.sort()
-        
+        # print(subtotal)
         c = 0
         for fila in list(df.iloc[:,0]):
             lista_fila = list(df.iloc[c,:])
+            c1 = 0
             for sub in subtotal:
                 try:
-                    lista = [lista_fila[sub:subtotal[c+1]]]
+                    lista = lista_fila[sub:subtotal[c1+1]]
                 except:#para cuando llegue a la ultima columna de subtotales
-                    lista = [lista_fila[sub:]]
-                aritmetic = evaluador_suma(lista)
+                    lista = lista_fila[sub:]
+                # print(lista)
+                aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
-                    errores[c] = evaluador_suma(lista)
+                    errores[c] = evaluador_suma(lista,f'fila{c+1}')
+                c1 += 1
             c += 1
         
 
@@ -859,7 +863,7 @@ def totales_fila(df,autosuma):
                     
     return errores
 
-def evaluador_suma(lista):
+def evaluador_suma(lista,indi):
     """
     
 
@@ -869,7 +873,8 @@ def evaluador_suma(lista):
         el primer valor de la lista debe ser el total y los demás
         sus desagregados, los cuales deben ser al menos dos, de 
         ser menos no hará la comprobación.
-
+    indi : str or int
+        es la fila o columna que se anda comparando
     Returns
     -------
      lista de errores
@@ -898,9 +903,10 @@ def evaluador_suma(lista):
                 comprobar = 'Si'
                 desagregados[c] = 0
             if type(valor) == str and valor not in convertir:
+                # print(valor)
                 desagregados[c] = 0
                 if valor != 'borra':
-                    errores.append('Error: valor no permitido')
+                    errores.append(f'Error: valor no permitido en {indi}')
             c += 1
         suma = sum(desagregados)
         if blanco > 0:
@@ -909,26 +915,26 @@ def evaluador_suma(lista):
                 if len(lista) == blanco:
                     return
                 else:
-                    errores.append('Hay espacios en blanco')
+                    errores.append(f'{indi} Hay espacios en blanco')
                     return errores
             if total != 'borra':
-                errores.append('Hay espacios en blanco')
+                errores.append(f'{indi} Hay espacios en blanco')
                 return errores
         if total in convertir and suma > 0:
-            errores.append('Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA')
+            errores.append(f'Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA en {indi}')
             return errores
         if total in convertir and suma == 0:
             if total.lower() == 'na' and ns == 'Si':
-                errores.append('Error: Si el total es NA ninguno de sus desagregados puede ser NS')
+                errores.append(f'Error: Si el total es NA ninguno de sus desagregados puede ser NS para {indi}')
         if type(total) == str and total not in convertir:
-            errores.append('Error: el total es un valor no permitido como respuesta')
+            errores.append(f'Error: el total es un valor no permitido como respuesta en {indi}')
             return errores
         if type(total) != str:
             if total != suma:
                 if total >= 0 and comprobar == 'No' and suma > 0:
-                    errores.append('Error: Suma de desagregados no coincide con el total')
+                    errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}')
                 if total == 0 and ns == 'Si':
-                    errores.append('Si el total es cero, ningún desagregado puede ser NS')
+                    errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
             
         return errores
     
