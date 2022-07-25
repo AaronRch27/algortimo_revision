@@ -719,6 +719,7 @@ def totales_columna(df1):
                 else:
                     errores['aritmetico'] = aritme
         c += 1
+    
     return errores
 
 def totales_fila(df,autosuma):
@@ -729,7 +730,7 @@ def totales_fila(df,autosuma):
         # validar columnas:
         por_col = totales_columna(df.iloc[:,1:])
         if por_col:
-            errores['Columnas'] = por_col
+            errores[99] = por_col['aritmetico']
         bor = df.shape
         df = df.drop([bor[0]-1],axis=0)
         
@@ -834,7 +835,7 @@ def totales_fila(df,autosuma):
                 
                 aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
-                    
+                   
                     errores[c] = aritmetic
             c += 1
         # ahora se revisan los subtotales con sus desagregados
@@ -854,6 +855,7 @@ def totales_fila(df,autosuma):
                 # print(lista)
                 aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
+                    
                     errores[c] = evaluador_suma(lista,f'fila{c+1}')
                 c1 += 1
             c += 1
@@ -919,6 +921,10 @@ def evaluador_suma(lista,indi):
                     return errores
             if total != 'borra':
                 errores.append(f'{indi} Hay espacios en blanco')
+                return errores
+        if total == 0:
+            if ns == 'Si':
+                errores.append(f'{indi} Si el total es cero, valores de desagregados no pueden ser NS o mayores a cero')
                 return errores
         if total in convertir and suma > 0:
             errores.append(f'Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA en {indi}')
