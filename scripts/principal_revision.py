@@ -26,7 +26,8 @@ def preguntas(hopan):
     for i in hopan['Unnamed: 0']:
         a = pd.isna(hopan['Unnamed: 0'][c])
         if a == False:
-            ind.append(c)
+            if hopan.iat[c,0] != '.':
+                ind.append(c)
         c+=1
     
     return ind
@@ -95,7 +96,7 @@ def imagen(cor,hopan,preguntas,seccion,modelos):
             c += 1
         mdf = hopan.iloc[a:f,0:c]
     if 'Hoja' in seccion: #este eelse ya no es necesario
-        print('aqui el error')
+
         mdf = hopan.iloc[a:b]
         
     mdf = mdf.reset_index(drop=True)

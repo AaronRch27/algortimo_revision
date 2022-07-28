@@ -42,8 +42,9 @@ cuestionario = {}
 for pag in pags:
     
     if pag not in saltar:
-        data = pd.read_excel(libro,sheet_name=pag,engine='openpyxl')
-        aver = procesar(data, pag,modelos)
-        cuestionario[pag] = aver
+        data = pd.read_excel(libro,sheet_name=pag,engine='openpyxl',
+                             na_values=[''], keep_default_na=False)
+        seccion = procesar(data, pag,modelos)
+        cuestionario[pag] = seccion
 
-list_erro = errores(cuestionario)
+list_erro = errores(cuestionario,libro)
