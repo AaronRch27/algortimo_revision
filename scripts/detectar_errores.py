@@ -652,16 +652,39 @@ def sinonosabe(df,autosuma):
             if string == 0:#porque aveces solo son filas con texto, normalmente en preguntas unifila
                 if fila[0] > 1:
                     if sum(fila[1:]) > 0:
-                        errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
+                        if 'catalogo' in errores:
+                            errores['catalogo'].append(f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}')
+                        if 'catalogo' not in errores:
+                            errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
                 if fila[0] == 0 and 'borra' not in indices[c1]:
-                    errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                    if 'catalogo' in errores:
+                        errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
+                    if 'catalogo' not in errores:
+                        errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                if fila[0] == 1:
+                    if sum(fila[1:]) == 0:
+                        if 'catalogo' in errores:
+                            errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
+                        if 'catalogo' not in errores:
+                            errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
             if string == 1:
                 if fila[0] > 1:
                     if fila[1:]:
-                        errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
+                        if 'catalogo' in errores:
+                            errores['catalogo'].appenf(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
+                        if 'catalogo' not in errores:
+                            errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
                 if fila[0] == 0 and 'borra' not in indices[c1]:
-                    errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
-                
+                    if 'catalogo' in errores:
+                        errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
+                    if 'catalogo' not in errores:
+                        errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                    if fila[0] == 1:
+                        if not fila[1:]:
+                            if 'catalogo' in errores:
+                                errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
+                            if 'catalogo' not in errores:
+                                errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
             c1 += 1
         c += 1
     return errores
@@ -715,7 +738,7 @@ def totales_columna(df1):
             aritme = evaluador_suma(lista,f'columna {col}')
             if aritme:
                 if 'aritmetico' in errores:
-                    errores['aritmetico'].append(aritme)
+                    errores['aritmetico'] += aritme
                 else:
                     errores['aritmetico'] = aritme
         c += 1
@@ -730,7 +753,18 @@ def totales_fila(df,autosuma):
         # validar columnas:
         por_col = totales_columna(df.iloc[:,1:])
         if por_col:
-            errores[99] = por_col['aritmetico']
+            borrar_error = []
+            c = 0
+            
+            for er in por_col['aritmetico']:
+                if 'Hay espacios en blanco' in er:#aqui no tiene sentido validar errores de blancos
+                    borrar_error.append(c)
+                c += 1
+            for br in list(reversed(borrar_error)):#borrar los errores de blanco
+                por_col['aritmetico'].pop(br)
+            if por_col['aritmetico']:
+                errores['aritmetico'] = por_col['aritmetico']
+                
         bor = df.shape
         df = df.drop([bor[0]-1],axis=0)
         
@@ -758,7 +792,10 @@ def totales_fila(df,autosuma):
                     lista = list(df.iloc[c1, tot:])
                 aritmetic = evaluador_suma(lista,f'fila{c1+1}')
                 if aritmetic:
-                    errores[c1] = aritmetic
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
                 
                 c1 += 1
             c += 1
@@ -819,7 +856,10 @@ def totales_fila(df,autosuma):
                     aritmetic = evaluador_suma(lista,f'fila{c+1}')
                     
                     if aritmetic:
-                        errores[c] = aritmetic
+                        if 'aritmetico' in errores:
+                            errores['aritmetico']+=aritmetic
+                        if 'aritmetico' not in errores:
+                            errores['aritmetico'] = aritmetic
                     c += 1
                 c2 += 1
             #en el ciclo for que conluye, se revisan únicamente los desagregados del total
@@ -836,7 +876,10 @@ def totales_fila(df,autosuma):
                 aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
                    
-                    errores[c] = aritmetic
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
             c += 1
         # ahora se revisan los subtotales con sus desagregados
         rsubtotal = subtotal+[]#un respaldo de subtotal por si se necesita después
@@ -856,7 +899,10 @@ def totales_fila(df,autosuma):
                 aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
                     
-                    errores[c] = evaluador_suma(lista,f'fila{c+1}')
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
                 c1 += 1
             c += 1
         
@@ -887,9 +933,10 @@ def evaluador_suma(lista,indi):
     else:
         errores = []
         total = lista[0]
-        convertir = ['NS','NA','na','ns','Na','Ns','nA','nS']
+        convertir = ['NS','NA','na','ns','Na','Ns','nA','nS','X','x']
         na = 'No'
         ns = 'No'
+        x = 'No'
         blanco = 0
         comprobar = 'No'
         desagregados = lista[1:]
@@ -902,6 +949,8 @@ def evaluador_suma(lista,indi):
                     na = 'Si'
                 if valor.lower() == 'ns':
                     ns = 'Si'
+                if valor.lower() == 'x':
+                    x = 'Si'
                 comprobar = 'Si'
                 desagregados[c] = 0
             if type(valor) == str and valor not in convertir:
@@ -915,6 +964,7 @@ def evaluador_suma(lista,indi):
             if total == 'borra':
                 blanco += 1
                 if len(lista) == blanco:
+                    
                     return
                 else:
                     errores.append(f'{indi} Hay espacios en blanco')
