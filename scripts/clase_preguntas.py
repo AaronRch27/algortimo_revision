@@ -333,6 +333,7 @@ class clase_pregunta():
         self.tipo_T = 'No Tabla'
         if forma[1] > 2 and len(c_espacios) > 2: #Esto solo aplicará para las preguntas que tienen desagregados
             self.tipo_T = 'NT_Desagregados'
+            self.T_tip = 'desagregados'
             nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
             nfram = {}
             nombres_c = list(nuevo_df.columns)
@@ -391,6 +392,8 @@ class clase_pregunta():
             #Lo que se hace a continuación es rellenar las listas del diccionario con nan para poder crear un dataframe
             ext = [len(nfram[key]) for key in nfram]
             parana = max(ext)
+            if parana > 2:
+                self.autosuma = 'Si'
             for key in nfram:
                 numerona = parana - len(nfram[key])
                 for i in range(numerona):

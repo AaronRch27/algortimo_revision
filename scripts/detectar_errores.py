@@ -208,12 +208,13 @@ def consistencia(cuestionario,pregunta):
                     if not compatible:
                         #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
                         compatible = analizar_tex_instr(tablaA,tablaC,instru)
-                        if 'Consistencia' in errores:
-                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
-                            continue
-                        else:
-                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
-                            continue
+                        if not compatible:
+                            if 'Consistencia' in errores:
+                                errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
+                                continue
+                            else:
+                                errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
+                                continue
                     #de llegar aquí, entonces sí hay compatibilidad
                     # print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
@@ -256,13 +257,53 @@ def consistencia(cuestionario,pregunta):
 def analizar_tex_instr(t1,t2,tx):
     "t1 y 2 son dataframes, tx es string instruccion. Regresa dict con filas o columnas compatibles(su indice)"    
     res = {}
-
-
-    # res['rel'] = respuesta[c]#list [columna,columna]
-    # res['p_act'] = ind_a[c] #list [0,1,2...]
-    # res['p_comp'] = indices[c] #list [0,1,2...]
+    tx = tx.lower()
+    textos = tx.split('igual')
+    res['rel'] = [] #forma final ['columna','columna']
+    res['p_act'] =[]   #list [0,1,2...] indices de lo que se va a comparar
+    res['p_comp'] = [] # list [0,1,2...]
+    #textos genera una lista de dos elementos, el primero es referente a pregunta actual y el segundo es referente a la pregunta de comparación
+    if 'columna' in textos[0]:
+        res['rel'].append('columna')
+    st = encontrar_comillas(textos[0])
+    #comparar palabra obtenida entre comillas con lista de nombres de columnas pregunta actual
+    col = list(t1.columns)
+    c = 0
+    for co in col: #encontrar la coincidencia con los nombres de columnas
+        co = co.lower()
+        if st in co:
+            res['p_act'].append(c)
+            break
+        c += 1
+    #ahora hacer lo mismo pero para pregunta de comparación
+    if not 'columna' in textos[1] and not 'numeral' in textos[1]:
+        res['rel'].append('columna')
+    st = encontrar_comillas(textos[1])
+    col = list(t2.columns)
+    c = 0
+    for co in col: #encontrar la coincidencia con los nombres de columnas
+        co = co.lower()
+        if st in co:
+            res['p_comp'].append(c)
+            break
+        c += 1
     
     return res
+
+def encontrar_comillas(texto):
+    st = ''
+    c = 0
+    for letra in texto:
+        if letra == '"':
+            for le in texto[c+1:]:
+                
+                if le != '"':
+                    st += le
+                else:
+                    break
+            break
+        c += 1
+    return st
 
 def relaciones_mis(tabla):
     """
@@ -488,7 +529,7 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
 
 def analizarIns(texto):
     "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
-    # print(texto)
+    
     if 'numeral' in texto:
         #obtener el numeral o numerales a sumar en la tabla
         if not 'suma' in texto:
@@ -497,7 +538,7 @@ def analizarIns(texto):
             numeral = int(nt1[0])
         # if 'suma'
         return numeral
-    if 'suma' in texto:
+    if 'suma' in texto or 'recuadro' in texto:
         
         return'autosuma'    
     
