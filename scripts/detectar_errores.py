@@ -195,6 +195,7 @@ def consistencia(cuestionario,pregunta):
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
             pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
             if pregunta_c == 'No':#agregar advertencia para errores
+                
                 if 'Consistencia' in errores:
                     errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
                 else:
@@ -623,6 +624,7 @@ def pregunta_comparar(nombre,instruccion):
     que hacer la comparacion
 
     """
+    borrar = [',', ' ']
     # print(instruccion)
     if 'la pregunta' not in instruccion:#preguntas cuya suma no debe ser necesariamente igual a sus desagregados, sino simplemente el valor decada desgregado no debe ser mayor al del total
         return 'misma' 
@@ -635,6 +637,7 @@ def pregunta_comparar(nombre,instruccion):
         resta = int(nnn[1]) - 1
         return f'{nnn[0]}.{resta}'
     else:
+        pregunta_c = ''.join(c for c in pregunta_c if c not in borrar)
         return pregunta_c
 
 
@@ -703,11 +706,12 @@ def sinonosabe(df,autosuma):
                     if 'catalogo' not in errores:
                         errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
                 if fila[0] == 1:
-                    if sum(fila[1:]) == 0:
-                        if 'catalogo' in errores:
-                            errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
-                        if 'catalogo' not in errores:
-                            errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
+                    if fila[1:]:#porque si la fila esta vacia no es un error ya que es la ultima columna y no hay nada con que corroborar
+                        if sum(fila[1:]) == 0:
+                            if 'catalogo' in errores:
+                                errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
+                            if 'catalogo' not in errores:
+                                errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
             if string == 1:
                 if fila[0] > 1:
                     if fila[1:]:
@@ -721,7 +725,8 @@ def sinonosabe(df,autosuma):
                     if 'catalogo' not in errores:
                         errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
                     if fila[0] == 1:
-                        if not fila[1:]:
+                        if not fila[1:]: #porque sino hay más fila, entonces es la última columna y no hay error
+                            
                             if 'catalogo' in errores:
                                 errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
                             if 'catalogo' not in errores:
@@ -758,6 +763,16 @@ def quitar_sinonosabe(df):
 def totales_columna(df1):
     "leer dataframe de desagregados por columna y regresar error"
     df = df1.fillna('...')
+    #quitar columnas que no necesitan esta validacion
+    rev = ['ver catálogo', 'ID']
+    S = []
+    for s in rev:
+        for col in list(df.columns):
+            if s in col:
+                S.append(col)
+    for sacar in S:
+        del df[sacar]
+            
     errores = {}
     c = 0
     for col in df:
@@ -1029,6 +1044,7 @@ def evaluador_suma(lista,indi):
         if type(total) != str:
             if total != suma:
                 if total >= 0 and comprobar == 'No' and suma > 0:
+                    print(total,suma,'okssksks')
                     errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
