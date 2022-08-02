@@ -399,6 +399,34 @@ class clase_pregunta():
                 for i in range(numerona):
                     nfram[key].append(np.nan)
             nuevo_df = pd.DataFrame(nfram)
+            return nuevo_df
+        if forma[1] == 2 and len(c_espacios) > 1: #para pregutas con solo una columna de desagregados
+            self.tipo_T = 'NT_Desagregados'
+            self.T_tip = 'desagregados'
+            nuevo_df = nuevo_df.fillna('    ')
+            nuevo_df = nuevo_df.reset_index(drop=True)
+            borrar = []
+            c = 0
+            for fila in nuevo_df.iloc[:,0]:
+                lis = list(nuevo_df.iloc[c,:])
+                vac = []
+                for val in lis:
+                    if val == '    ':
+                        vac.append(val)
+                if len(vac) == len(lis):
+                    borrar.append(c)
+                c += 1
+            if borrar:
+                nuevo_df = nuevo_df.drop(borrar,axis=0)
+                nuevo_df = nuevo_df.reset_index(drop=True)
+            #convertir a nombres de columnas los que están en columa 1 y pasar columna cero a fila
+            ncols = {}
+            c = 0
+            for val in nuevo_df.iloc[:,1]:
+                ncols[val] = nuevo_df.iloc[c,0]
+                c += 1
+            nuevo_df = pd.DataFrame(ncols,index=[0])
+            
         return nuevo_df
     
     @staticmethod

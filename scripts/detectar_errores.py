@@ -108,10 +108,10 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # try:
+            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -195,7 +195,7 @@ def consistencia(cuestionario,pregunta):
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
             pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
             if pregunta_c == 'No':#agregar advertencia para errores
-                
+
                 if 'Consistencia' in errores:
                     errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
                 else:
@@ -207,6 +207,7 @@ def consistencia(cuestionario,pregunta):
                     tablaC = pregunta_c.tablas[1]
                     compatible = analizarT(tablaA,tablaC)
                     if not compatible:
+
                         #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
                         compatible = analizar_tex_instr(tablaA,tablaC,instru)
                         if not compatible:
@@ -260,12 +261,12 @@ def analizar_tex_instr(t1,t2,tx):
     res = {}
     tx = tx.lower()
     textos = tx.split('igual')
-    res['rel'] = [] #forma final ['columna','columna']
+    res['rel'] = ['columna'] #forma final ['columna','columna']
     res['p_act'] =[]   #list [0,1,2...] indices de lo que se va a comparar
     res['p_comp'] = [] # list [0,1,2...]
     #textos genera una lista de dos elementos, el primero es referente a pregunta actual y el segundo es referente a la pregunta de comparación
-    if 'columna' in textos[0]:
-        res['rel'].append('columna')
+    # if 'columna' in textos[0]: # se comenta esta parte porque se dará como predeterminado columna para pregunta actual
+    #     res['rel'].append('columna')
     st = encontrar_comillas(textos[0])
     #comparar palabra obtenida entre comillas con lista de nombres de columnas pregunta actual
     col = list(t1.columns)
@@ -277,6 +278,22 @@ def analizar_tex_instr(t1,t2,tx):
             break
         c += 1
     #ahora hacer lo mismo pero para pregunta de comparación
+    if 'numeral' in textos[1]:
+        rt = textos[1].split('numeral')
+        numeral = rt[1][:3]
+        numeral = ''.join(c for c in numeral if c != ' ')
+        # res['rel'].append('fila')
+        if len(list(t2.iloc[:,0])) == 1: #tablas de fila unica que son derivadas de preguntas que no son tablas
+            #comprobar en columnas
+            cols = list(t2.columns)
+            res['rel'].append('columna')
+            c = 0
+            for val in cols:
+                if numeral in val:
+                    res['p_comp'].append(c)
+                c += 1
+            return res
+        
     if not 'columna' in textos[1] and not 'numeral' in textos[1]:
         res['rel'].append('columna')
     st = encontrar_comillas(textos[1])
@@ -452,7 +469,7 @@ def NS(comparador,referente):
     n = ['NS','ns']
     a = ['NA','na']
     br = ['borra']
-    
+
     if referente == comparador:
         return 0
     if referente in br and comparador in br:
@@ -537,6 +554,7 @@ def analizarIns(texto):
             nt = texto.split('numeral')
             nt1 = nt[1].split()
             numeral = int(nt1[0])
+            numeral = 'autosuma' #para caso especifico de pregunta que no es tabala y genera una de filas unicas
         # if 'suma'
         return numeral
     if 'suma' in texto or 'recuadro' in texto:
@@ -638,6 +656,8 @@ def pregunta_comparar(nombre,instruccion):
         return f'{nnn[0]}.{resta}'
     else:
         pregunta_c = ''.join(c for c in pregunta_c if c not in borrar)
+        if pregunta_c.endswith('.'):
+            pregunta_c = pregunta_c[:-1]
         return pregunta_c
 
 
@@ -1044,7 +1064,6 @@ def evaluador_suma(lista,indi):
         if type(total) != str:
             if total != suma:
                 if total >= 0 and comprobar == 'No' and suma > 0:
-                    print(total,suma,'okssksks')
                     errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
