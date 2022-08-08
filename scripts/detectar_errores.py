@@ -108,10 +108,10 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            # try:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             if consist:
                 
                 if pregunta in errores:
@@ -510,6 +510,7 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
     lista. list. Lista con los valores que serán comparados
 
     """
+    
     #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
     if valor_conseguir == 'columna':
                         
@@ -525,12 +526,13 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
                 pa_val.append(suma)
         if tipo_val == 'unifila':
             pa_val = list(tabla.iloc[0,:])
+        if tipo_val == 'suma todo':
+            #seguro es de unifila pero hay que sumar toda la fila
+            pa_val = sumar_fila(list(tabla.iloc[0,:]))
         
         if type(tipo_val) == int:
             pa_val = list(tabla.iloc[tipo_val-1,:])
-        
-        
-    
+            
     # if valor_conseguir == 'fila':
         
 
@@ -543,7 +545,29 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
             return pa_val
     pa_val = pa_val[indices[0]:indices[-1]+1]
     return pa_val
-    
+
+def sumar_fila(lista):
+    "funcion para sumar lista y retornar el valor total, es necesario por ns"
+    NA = 0
+    NS = 0
+    res = 0
+    for valor in lista:
+        if type(valor) == str:
+            n = valor.lower()
+            if n == 'na':
+                NA = 1
+            if n == 'ns':
+                NS = 1
+        else:
+            res += valor
+    if valor == 0:
+        if NA > 0 and NS > 0:
+            res = 'NS'
+        if NS > 0 and NA == 0:
+            res  = 'NS'
+        if NA > 0 and NS == 0:
+            res = 'NA'
+    return [res]
 
 def analizarIns(texto):
     "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
@@ -558,7 +582,9 @@ def analizarIns(texto):
         # if 'suma'
         return numeral
     if 'suma' in texto or 'recuadro' in texto:
-        
+        if 'suma de las cantidades registradas' in texto and not 'columna' in texto and not 'numeral' in texto:
+            return 'suma todo'
+
         return'autosuma'    
     
     if 'suma' not in texto and 'numeral' not in texto:
