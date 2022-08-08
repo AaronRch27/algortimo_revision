@@ -108,10 +108,13 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            # try:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            #modo excepcion:
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            #modo localizar errores:
+            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             if consist:
                 
                 if pregunta in errores:
@@ -356,7 +359,7 @@ def relaciones_mis(tabla):
     if ind == 0:
         errores['Consistencia'] = ['No se pudo comprar internamente porque no hay columna de Total']
         return errores
-    print(ind,'hhhhhhhh')
+    
     filas = tablac.shape
     for fila in range(filas[0]):
         lista = tablac.iloc[fila-1,ind:]
