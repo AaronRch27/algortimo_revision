@@ -46,14 +46,18 @@ def depurar(errores):
             
             del errores[pregunta]['borraAr']
             for k in errores[pregunta]:
-                if type(k) == int:
+                if type(k) == int or k == 'aritmetico':
+                    
+                    er = []
                     c = 0
                     for error in errores[pregunta][k]:
-                        if error == 'Error: Suma de desagregados no coincide con el total':
-                            c += 1
-                    if c > 0:
-                        for vez in range(c):
-                            errores[pregunta][k].remove('Error: Suma de desagregados no coincide con el total')
+                        if 'Error: Suma de desagregados no coincide con el total' in error:
+                            er.append(c)
+                        c += 1
+                    if er:
+                        
+                        for vez in reversed(er):
+                            errores[pregunta][k].pop(vez)
             borrar=[]
             for k in errores[pregunta]: 
                 if not errores[pregunta][k]:
@@ -80,6 +84,10 @@ def iterar_cuestionario(cuestionario):
                     censo = 'Hoja de pruebas'
             for tabla in tablas:
                 if type(tablas[tabla]) == str:
+                    continue
+                #comprobar si la tabla está toda en blanco
+                t1 = tabla_vacia(tablas[tabla])
+                if not t1:#si está vacía la salta
                     continue
                 df = tablas[tabla].copy()#con copia para no afectar el frame original
                 ndf = quitar_sinonosabe(df)
@@ -109,12 +117,12 @@ def iterar_cuestionario(cuestionario):
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             #modo excepcion:
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # try:
+            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             #modo localizar errores:
-            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             if consist:
                 
                 if pregunta in errores:
@@ -131,6 +139,20 @@ def iterar_cuestionario(cuestionario):
             
     return errores, censo
 
+def tabla_vacia(df):
+    med = df.shape
+    if med[0]>1000:
+        cortado = df.iloc[:-1,1:]
+    if med[0]<1000:
+        cortado = df.iloc[:,1:]
+    vacios = cortado.isin(['borra','borra borra'])
+    falsos = vacios.isin([False]).any().any()
+    if falsos:
+        return 'no vacio'
+    else:
+        print('pregunta con tabla vacia')
+        return
+    
 def consistencia(cuestionario,pregunta):
     """
     
@@ -183,6 +205,7 @@ def consistencia(cuestionario,pregunta):
 
             if comparar == 'misma':#La validacion es con la misma pregunta
                 tablas = pregunta.tablas
+                
                 for tabla in tablas:
                     relmisma = relaciones_mis(tablas[tabla])
                     if relmisma:
@@ -193,6 +216,7 @@ def consistencia(cuestionario,pregunta):
                         errores['borraAr'] = 1
                         return errores
                     if not relmisma:
+                        
                         errores['borraAr'] = 1
                         return errores
         #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
@@ -210,7 +234,7 @@ def consistencia(cuestionario,pregunta):
                     tablaC = pregunta_c.tablas[1]
                     compatible = analizarT(tablaA,tablaC)
                     if not compatible:
-
+                        
                         #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
                         compatible = analizar_tex_instr(tablaA,tablaC,instru)
                         if not compatible:
@@ -281,6 +305,7 @@ def analizar_tex_instr(t1,t2,tx):
             break
         c += 1
     #ahora hacer lo mismo pero para pregunta de comparación
+    
     if 'numeral' in textos[1]:
         rt = textos[1].split('numeral')
         numeral = rt[1][:3]
@@ -297,7 +322,7 @@ def analizar_tex_instr(t1,t2,tx):
                 c += 1
             return res
         
-    if not 'columna' in textos[1] and not 'numeral' in textos[1]:
+    if not 'numeral' in textos[1]:
         res['rel'].append('columna')
     st = encontrar_comillas(textos[1])
     col = list(t2.columns)
@@ -397,8 +422,22 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
     errores = {}
     #primer error comparar que ambas listas sean del mismo tamaño
     if len(comparador) != len(referente):
-        errores['Consistencia'] = ['No es posible comparar por error de lectura en tabla']
-        return errores
+        if len(comparador) > len(referente):
+            ncomp = []
+            c = -1 #para tomar los últimosvalores de la lista que generalmente son los totales
+            for va in referente:
+                ncomp.append(comparador[c])
+                c -= 1
+            comparador = ncomp
+        if len(comparador) < len(referente):
+            nref = []
+            c = -1 #para tomar los últimosvalores de la lista que generalmente son los totales
+            for va in comparador:
+                nref.append(referente[c])
+                c -= 1
+            referente = nref
+        # errores['Consistencia'] = ['No es posible comparar por error de lectura en tabla']
+        # return errores
     c = -1
     for comp in comparador:
         c +=1
@@ -432,6 +471,7 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
                 # return errores
         #sino son iguales entonces se hacen las operaciones
         if operacion == 2:
+            
             if comp <= ref:
                 continue
             else:
@@ -496,7 +536,7 @@ def NS(comparador,referente):
     if referente > 0 and comparador in n:
         return 0
 
-def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
+def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
     """
     
 
@@ -517,7 +557,7 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
     lista. list. Lista con los valores que serán comparados
 
     """
-    
+    tabla = tabla1.fillna(0)#en este punto está bien cambiar los Nan por cero ya que no se busca comprobación de blancos
     #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
     if valor_conseguir == 'columna':
                         
@@ -551,6 +591,7 @@ def lista_valores(tabla,autosuma,tipo_val,indices,valor_conseguir):
             pa_val = list(tabla.iloc[:,1])  
             return pa_val
     pa_val = pa_val[indices[0]:indices[-1]+1]
+    
     return pa_val
 
 def sumar_fila(lista):
@@ -738,6 +779,7 @@ def sinonosabe(df,autosuma):
         c1 = 0
         for elemento in lista:
             fila = list(nf.iloc[c1])
+            
             #comporbar si hay strings
             for val in fila:
                 if type(val) == str:
@@ -753,7 +795,8 @@ def sinonosabe(df,autosuma):
                             errores['catalogo'].append(f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}')
                         if 'catalogo' not in errores:
                             errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
-                if fila[0] == 0 and 'borra' not in indices[c1]:
+                if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
+                    # print(indices[c1],'11111111111')
                     if 'catalogo' in errores:
                         errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
                     if 'catalogo' not in errores:
@@ -772,7 +815,8 @@ def sinonosabe(df,autosuma):
                             errores['catalogo'].appenf(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
                         if 'catalogo' not in errores:
                             errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
-                if fila[0] == 0 and 'borra' not in indices[c1]:
+                if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
+                    # print(indices[c1],'11111111111')
                     if 'catalogo' in errores:
                         errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
                     if 'catalogo' not in errores:
@@ -1066,7 +1110,7 @@ def evaluador_suma(lista,indi):
                 # print(valor)
                 desagregados[c] = 0
                 if valor != 'borra':
-                    errores.append(f'Error: valor no permitido en {indi}')
+                    errores.append(f'Error: el valor {valor} no es permitido en {indi}')
             c += 1
         suma = sum(desagregados)
         if blanco > 0:
