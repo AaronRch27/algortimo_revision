@@ -116,13 +116,13 @@ def iterar_cuestionario(cuestionario):
                         errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
-            #modo excepcion:
-            # try:
-            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # modo excepcion:
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             #modo localizar errores:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             if consist:
                 
                 if pregunta in errores:
@@ -233,6 +233,8 @@ def consistencia(cuestionario,pregunta):
                     tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
                     tablaC = pregunta_c.tablas[1]
                     compatible = analizarT(tablaA,tablaC)
+                    # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
+
                     if not compatible:
                         
                         #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
@@ -245,7 +247,7 @@ def consistencia(cuestionario,pregunta):
                                 errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                                 continue
                     #de llegar aquí, entonces sí hay compatibilidad
-                    # print(compatible)
+                    print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -268,6 +270,7 @@ def consistencia(cuestionario,pregunta):
                                            tipo_val_pc,compatible['p_comp'],
                                            valor_conseguir_p_comp)
                     #comparar ambas listas según su operación
+                    # print(pa_val,pc_val)
                     err = comparacion_consistencia(op,pa_val,pc_val,comparar)
                     if err:
                         if 'Consistencia' in errores:
@@ -288,12 +291,17 @@ def analizar_tex_instr(t1,t2,tx):
     res = {}
     tx = tx.lower()
     textos = tx.split('igual')
-    res['rel'] = ['columna'] #forma final ['columna','columna']
+    res['rel'] = ['columna','columna'] #forma final ['columna','columna']
     res['p_act'] =[]   #list [0,1,2...] indices de lo que se va a comparar
     res['p_comp'] = [] # list [0,1,2...]
     #textos genera una lista de dos elementos, el primero es referente a pregunta actual y el segundo es referente a la pregunta de comparación
     # if 'columna' in textos[0]: # se comenta esta parte porque se dará como predeterminado columna para pregunta actual
     #     res['rel'].append('columna')
+    if 'numeral' in textos[0] and not 'columna' in textos[0]:
+        res['rel'][0] = 'fila'
+    if 'numeral' in textos[1] and not 'columna' in textos[1]:
+        res['rel'][1] = 'fila'
+        
     st = encontrar_comillas(textos[0])
     #comparar palabra obtenida entre comillas con lista de nombres de columnas pregunta actual
     col = list(t1.columns)
@@ -305,7 +313,7 @@ def analizar_tex_instr(t1,t2,tx):
             break
         c += 1
     #ahora hacer lo mismo pero para pregunta de comparación
-    
+    # print(tx)
     if 'numeral' in textos[1]:
         rt = textos[1].split('numeral')
         numeral = rt[1][:3]
@@ -314,7 +322,7 @@ def analizar_tex_instr(t1,t2,tx):
         if len(list(t2.iloc[:,0])) == 1: #tablas de fila unica que son derivadas de preguntas que no son tablas
             #comprobar en columnas
             cols = list(t2.columns)
-            res['rel'].append('columna')
+            # res['rel'].append('columna')
             c = 0
             for val in cols:
                 if numeral in val:
@@ -322,8 +330,8 @@ def analizar_tex_instr(t1,t2,tx):
                 c += 1
             return res
         
-    if not 'numeral' in textos[1]:
-        res['rel'].append('columna')
+    # if not 'numeral' in textos[1]:
+        # res['rel'].append('columna')
     st = encontrar_comillas(textos[1])
     col = list(t2.columns)
     c = 0
@@ -557,6 +565,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
     lista. list. Lista con los valores que serán comparados
 
     """
+    # print(autosuma,tipo_val,indices,valor_conseguir)
     tabla = tabla1.fillna(0)#en este punto está bien cambiar los Nan por cero ya que no se busca comprobación de blancos
     #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
     if valor_conseguir == 'columna':
@@ -576,12 +585,34 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
         if tipo_val == 'suma todo':
             #seguro es de unifila pero hay que sumar toda la fila
             pa_val = sumar_fila(list(tabla.iloc[0,:]))
-        
+            
         if type(tipo_val) == int:
             pa_val = list(tabla.iloc[tipo_val-1,:])
             
     # if valor_conseguir == 'fila':
+    if 'numeral_fila' in tipo_val:#esta condicional aplica para los que son numerales pero no deben ser sumados
+        divi = tipo_val.split()
+        if '.' in divi[1]:
+            numeral = divi[1].split('.')
+        if not '.' in divi[1]:
+            numeral = [divi[1],'1'] #simular que es numeral .1, porque de igual forma se buscará el primer valor del numeral, así que no hay problema
+        prim = numeral[0]
+        index_tab = list(tabla.iloc[:,0])#conseguir la columna donde vienen los numerales de la tabla
+        posibles = []
+        c = 0
+        if len(index_tab) == 1:
+            pa_val = list(tabla.iloc[0,:]) #unifilas
+            return pa_val
+        for indice in index_tab:
+
+            if prim in indice:
+                posibles.append(c)
+            c += 1
+        sec = int(numeral[1])-1 #para buscar la segunda parte del numeral, si fuese 3.1, aquí se buscaría el 1, menos uno para obtener el índice de la lista posibles
+        # print(sec,posibles,type(prim),index_tab)
+        pa_val = list(tabla.iloc[posibles[sec],1:])
         
+        return pa_val #aqui retorna toda la fila del numeral
 
     if not indices:
         if 'Total' in list(tabla.columns):
@@ -619,14 +650,17 @@ def sumar_fila(lista):
 
 def analizarIns(texto):
     "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
-    
+    # print(texto)
     if 'numeral' in texto:
         #obtener el numeral o numerales a sumar en la tabla
         if not 'suma' in texto:
             nt = texto.split('numeral')
             nt1 = nt[1].split()
-            numeral = int(nt1[0])
-            numeral = 'autosuma' #para caso especifico de pregunta que no es tabala y genera una de filas unicas
+            # try:
+            #     numeral = int(nt1[0])
+            #     numeral = 'autosuma' #para caso especifico de pregunta que no es tabala y genera una de filas unicas
+            # except:
+            numeral = 'numeral_fila '+ nt1[0]
         # if 'suma'
         return numeral
     if 'suma' in texto or 'recuadro' in texto:
