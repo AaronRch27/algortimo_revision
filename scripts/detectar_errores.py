@@ -232,22 +232,22 @@ def consistencia(cuestionario,pregunta):
                 if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
                     tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
                     tablaC = pregunta_c.tablas[1]
-                    compatible = analizarT(tablaA,tablaC)
+                    # compatible = analizarT(tablaA,tablaC)
                     # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
-
+                    compatible = analizar_tex_instr(tablaA,tablaC,instru)
                     if not compatible:
                         
                         #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
-                        compatible = analizar_tex_instr(tablaA,tablaC,instru)
-                        if not compatible:
-                            if 'Consistencia' in errores:
-                                errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
-                                continue
-                            else:
-                                errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
-                                continue
+                        # compatible = analizar_tex_instr(tablaA,tablaC,instru)
+                        # if not compatible:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
+                            continue
+                        else:
+                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
+                            continue
                     #de llegar aquí, entonces sí hay compatibilidad
-                    print(compatible)
+                    # print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -377,7 +377,7 @@ def relaciones_mis(tabla):
 
     """
     tablac = tabla.copy()
-    tablac = tablac.replace({'borra':0})
+    tablac = tablac.replace({'borra':0,'NA':0,'NS':0})
     errores = {}
     #identificar total
     col = tablac.columns
@@ -395,7 +395,7 @@ def relaciones_mis(tabla):
     
     filas = tablac.shape
     for fila in range(filas[0]):
-        lista = tablac.iloc[fila-1,ind:]
+        lista = list(tablac.iloc[fila-1,ind:])
         total = lista[0]
         for val in lista[1:]:
             if val > total:
@@ -452,20 +452,22 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
         ref = referente[c]
         if type(comp) == str or type(ref) == str: #si hay NS o NA
             nsa = NS(comp,ref)
+            if nsa == 1:
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append(f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}, con los valores {comp} y {ref}')
+                else:
+                    errores['Consistencia'] = [f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}, con los valores {comp} y {ref}']
+                    continue
+                # return errores
             #convertir a cero para poder hacer comparaciones posteriores
             if type(comp) == str:
+
                 comp = 0
             if type(ref) == str:
                 ref = 0
-                
-            if nsa == 1:
-                if 'Consistencia' in errores:
-                    errores['Consistencia'].append(f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}')
-                else:
-                    errores['Consistencia'] = [f'Inconsistencia detectada con el uso de NA/NS en pregunta {nombre_ref}']
-                    continue
-                # return errores
+
             if nsa  == 0:#quiere decir que es correcto el registro
+
                 continue
         #cualquier comparación se basa en que sean iguales, por eso es lo primero
         if operacion == 1:
@@ -501,7 +503,7 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
         
     return errores
 
-def NS(comparador,referente):
+def NS(p_actual,p_comp):
     """
     
 
@@ -521,6 +523,8 @@ def NS(comparador,referente):
     generar errores
 
     """
+    comparador = p_actual
+    referente = p_comp
     n = ['NS','ns']
     a = ['NA','na']
     br = ['borra']
@@ -582,10 +586,13 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
                 pa_val.append(suma)
         if tipo_val == 'unifila':
             pa_val = list(tabla.iloc[0,:])
-        if tipo_val == 'suma todo':
+        if autosuma == 'No' and tipo_val == 'suma todo':
             #seguro es de unifila pero hay que sumar toda la fila
             pa_val = sumar_fila(list(tabla.iloc[0,:]))
-            
+        if autosuma == 'Si' and tipo_val == 'suma todo':
+            pa_val = list(tabla.iloc[:,1])
+            # print('esto deberia ser',pa_val)
+            return [pa_val[-1]] #regresa solo un valor que pertenece a la autosuma y se pone en lista para no romper ese formate 
         if type(tipo_val) == int:
             pa_val = list(tabla.iloc[tipo_val-1,:])
             
