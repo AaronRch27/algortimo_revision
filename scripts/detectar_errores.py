@@ -117,12 +117,12 @@ def iterar_cuestionario(cuestionario):
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             # modo excepcion:
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # try:
+            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             #modo localizar errores:
-            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             if consist:
                 
                 if pregunta in errores:
@@ -377,32 +377,42 @@ def relaciones_mis(tabla):
 
     """
     tablac = tabla.copy()
-    tablac = tablac.replace({'borra':0,'NA':0,'NS':0})
     errores = {}
-    #identificar total
-    col = tablac.columns
-    ind = 0
-    for c in col:
+    if tablac.shape[0] > 1: #para tablas que no son unifila
+        tablac = tablac.replace({'borra':0,'NA':0,'NS':0})
+        #identificar total
+        col = tablac.columns
+        ind = 0
+        for c in col:
+            
+            if c == 'Total':
+                break
+            if c == 'Computadoras': #se agrega esta para tablas con  comparacion en computadoras
+                break
+            ind += 1
+        if ind == 0:
+            errores['Consistencia'] = ['No se pudo comprar internamente porque no hay columna de Total']
+            return errores
         
-        if c == 'Total':
-            break
-        if c == 'Computadoras': #se agrega esta para tablas con  comparacion en computadoras
-            break
-        ind += 1
-    if ind == 0:
-        errores['Consistencia'] = ['No se pudo comprar internamente porque no hay columna de Total']
-        return errores
-    
-    filas = tablac.shape
-    for fila in range(filas[0]):
-        lista = list(tablac.iloc[fila-1,ind:])
-        total = lista[0]
-        for val in lista[1:]:
-            if val > total:
+        filas = tablac.shape
+        for fila in range(filas[0]):
+            lista = list(tablac.iloc[fila-1,ind:])
+            total = lista[0]
+            for val in lista[1:]:
+                if val > total:
+                    if 'consistencia' in errores:
+                        errores['Consistencia'].append(f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total')
+                    if 'consistencia' not in errores:
+                        errores['Consistencia'] = [f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total']
+    if tablac.shape[0] == 1: #suelen ser tablas NT  sin desagregados
+        primero = list(tablac.iloc[:,0])
+        for col in tablac.iloc[:,1:]:
+            if tablac[col][0] > primero[0]:
                 if 'consistencia' in errores:
-                    errores['Consistencia'].append(f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total')
+                    errores['Consistencia'].append(f'{col}:valores no pueden ser mayores que el valor de {tablac.columns[0]}')
                 if 'consistencia' not in errores:
-                    errores['Consistencia'] = [f'Fila {fila}:valores de desagregados no pueden ser mayores que el valor del total']
+                    errores['Consistencia'] = [f'{col}:valores  no pueden ser mayores que el valor de {tablac.columns[0]}']                
+        
     return errores
 
 def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
@@ -607,9 +617,19 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
         index_tab = list(tabla.iloc[:,0])#conseguir la columna donde vienen los numerales de la tabla
         posibles = []
         c = 0
+
         if len(index_tab) == 1:
             pa_val = list(tabla.iloc[0,:]) #unifilas
             return pa_val
+        if tabla1.isna().any().any():#tablas NT desagregados
+            for col in tabla:
+                if prim in col:
+                    posibles.append(c)
+                c += 1
+            sec = int(numeral[1])-1
+            pa_val = list(tabla.iloc[:,posibles[sec]])
+            return pa_val
+        
         for indice in index_tab:
 
             if prim in indice:
