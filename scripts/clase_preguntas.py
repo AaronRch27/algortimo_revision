@@ -313,21 +313,26 @@ class clase_pregunta():
         
     @staticmethod
     def transformar_notab(df,mayor,self):
-        
+        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        # ndf = df.iloc[:previo_comentario[0][0],:]
         colyfil = clase_pregunta.imagen(df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         c_espacios = espacios + [] #crear una copia para modificarla
-        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        # print(ndf,espacios,previo_comentario)
         # print(espacios,df)
         for espacio in espacios:#sacar los espacios que no sirven, aunque 
             if espacio > previo_comentario[0][0]:
                 c_espacios.remove(espacio)
         inf =  [i for i in range(0,colyfil['fila'][espacios[0]]+2)]
         sup = [i for i in range(colyfil['fila'][espacios[-1]]+1,len(df['Unnamed: 2'].values))]
-        nuevo_df = df.drop(inf + sup, axis=0)
+        nuevo_df = df.drop(inf+sup, axis=0)
         nuevo_df = clase_pregunta.borrar_col(nuevo_df)
         forma = nuevo_df.shape
-        
+        #porque se pasa el frame en preguntas donde hay glosarios de nuevas subsecciones
+        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', nuevo_df)
+        if previo_comentario:
+            nuevo_df = nuevo_df.iloc[:previo_comentario[0][0],:]
+
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
         self.tipo_T = 'No Tabla'
