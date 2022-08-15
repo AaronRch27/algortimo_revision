@@ -248,7 +248,7 @@ def consistencia(cuestionario,pregunta):
                                 errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                                 continue
                         #de llegar aquí, entonces sí hay compatibilidad
-                        # print(compatible)
+                        print(compatible)
                         #conseguir los valores de la tabla en pregunta actual
                         valor_conseguir_p_actual = compatible['rel'][0]
                         instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -307,7 +307,10 @@ def analizar_tex_instr(t1,t2,tx):
     if 'numeral' in textos[1] and not 'columna' in textos[1]:
         res['rel'][1] = 'fila'
         
-    st = encontrar_comillas(textos[0])
+    st, v = encontrar_comillas(textos[0])
+    if v:
+        st = v
+    falta agregar la lectura de encabezado de tabla
     #comparar palabra obtenida entre comillas con lista de nombres de columnas pregunta actual
     col = list(t1.columns)
     c = 0
@@ -337,7 +340,9 @@ def analizar_tex_instr(t1,t2,tx):
         
     # if not 'numeral' in textos[1]:
         # res['rel'].append('columna')
-    st = encontrar_comillas(textos[1])
+    st, v = encontrar_comillas(textos[1])
+    if v:
+        st = v
     col = list(t2.columns)
     c = 0
     for co in col: #encontrar la coincidencia con los nombres de columnas
@@ -351,6 +356,7 @@ def analizar_tex_instr(t1,t2,tx):
 
 def encontrar_comillas(texto):
     st = ''
+    stl = ''
     c = 0
     for letra in texto:
         if letra == '"':
@@ -362,7 +368,19 @@ def encontrar_comillas(texto):
                     break
             break
         c += 1
-    return st
+        
+    for letra in texto[c+1:]:
+        if letra == '"':
+            for le in texto[c+1:]:
+                
+                if le != '"':
+                    stl += le
+                else:
+                    break
+            break
+        c += 1
+    
+    return st, stl
 
 def relaciones_mis(tabla):
     """
@@ -443,6 +461,7 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
 
     """
     errores = {}
+    # print(comparador,referente)
     #primer error comparar que ambas listas sean del mismo tamaño
     if len(comparador) != len(referente):
         if len(comparador) > len(referente):
@@ -490,9 +509,9 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
                 continue
             else:
                 if 'Consistencia' in errores:
-                    errores['Consistencia'].append(f'El valor {comp} no es igual que pregunta {nombre_ref}')
+                    errores['Consistencia'].append(f'El valor {comp} no es igual que {ref} de pregunta {nombre_ref}')
                 else:
-                    errores['Consistencia'] = [f'El valor {comp} no es igual que pregunta {nombre_ref}']
+                    errores['Consistencia'] = [f'El valor {comp} no es igual que {ref} de pregunta {nombre_ref}']
                 # return errores
         #sino son iguales entonces se hacen las operaciones
         if operacion == 2:
@@ -501,18 +520,18 @@ def comparacion_consistencia(operacion,comparador,referente,nombre_ref):
                 continue
             else:
                 if 'Consistencia' in errores:
-                    errores['Consistencia'].append(f'El valor {comp} no es menor o igual que pregunta {nombre_ref}')
+                    errores['Consistencia'].append(f'El valor {comp} no es menor o igual que {ref} de pregunta {nombre_ref}')
                 else:
-                    errores['Consistencia'] = [f'El valor {comp} no es menor o igual que pregunta {nombre_ref}']
+                    errores['Consistencia'] = [f'El valor {comp} no es menor o igual que {ref} de pregunta {nombre_ref}']
                 # return errores
         if operacion == 3:
             if comp >= ref:
                 continue
             else:
                 if 'Consistencia' in errores:
-                    errores['Consistencia'].append(f'El valor {comp} no es mayor o igual que pregunta {nombre_ref}')
+                    errores['Consistencia'].append(f'El valor {comp} no es mayor o igual que {ref} de pregunta {nombre_ref}')
                 else:
-                    errores['Consistencia'] = [f'El valor {comp} no es mayor o igual que pregunta {nombre_ref}']
+                    errores['Consistencia'] = [f'El valor {comp} no es mayor o igual que {ref} de pregunta {nombre_ref}']
                 # return errores
         
         
@@ -996,7 +1015,7 @@ def totales_fila(df,autosuma):
         if 'Subtotal' in str(colum):
             subtotal.append(c)
         c += 1
-    # print(total,subtotal)
+    # print(total,subtotal,df.shape)
     
     if total and not subtotal:
         c = 0
@@ -1022,12 +1041,21 @@ def totales_fila(df,autosuma):
     if total and subtotal:
         desagre_totales = [] #lista de los totales de desagregados
         limites = []
+        c = 0
         for tota in total:
-
+            try: #esto es para cuando hay más de un total y alguno de ellos u otro tiene desagregados
+                if subtotal[0] > total[c+1]:
+                    limites.append(total[c+1])
+                    c += 1
+                    continue
+            except:
+                pass
             for sub in subtotal:
                 if sub > tota:
                     limites.append(sub) #límites tendrá un numero por cada elemento mayor a cada total detectado
                     break
+            c += 1
+                
         c = 0
         for limite in limites:#generar listas con columnas intermedias entre un total y su primer subtotal
             if limite-total[c]>0:
@@ -1036,6 +1064,7 @@ def totales_fila(df,autosuma):
                 lista_columnas =[i for i in range(total[c],limite)]
             desagre_totales.append(lista_columnas)
             c += 1
+        # print(limites,desagre_totales,total, subtotal)
         #hacer listas de cada total desagregado con sus respectivos desagregados
         for desa in desagre_totales:
             ref = len(desa)
@@ -1051,9 +1080,10 @@ def totales_fila(df,autosuma):
             comp.append(resta) #porque en la iteración falta el último subtotal contra la cantidad de columnas
             # print(ref,comp,desagre_totales)
             #hacer las listas y enviar a la funcion evaluadora por los totales/desagregados en los subtotales
+
             c2 = 1 #tiene que iniciar desde 1 porque no deseamos almacenar el valor del subtotal sino del que sigue
             for des in desa:
-                
+
                 c = 0
                 for fila in list(df.iloc[:,0]):#primero se itera por fila del df
                     lista_fila = list(df.iloc[c,:])#se saca la lista de los valores de la fila
@@ -1072,6 +1102,7 @@ def totales_fila(df,autosuma):
                                     lista.append(agregar)
                             
                         c1 += 1
+                    
                     aritmetic = evaluador_suma(lista,f'fila{c+1}')
                     
                     if aritmetic:
@@ -1086,12 +1117,17 @@ def totales_fila(df,autosuma):
         c = 0
         for fila in list(df.iloc[:,0]):
             lista_fila = list(df.iloc[c,:])
+            c1 = 0
             for tot in total:
                 lista = [lista_fila[tot]]
                 for sub in subtotal:
-                    if sub > tot:
-                        lista.append(lista_fila[sub])
-                
+                    try: #para atender casos donde hay varios totales pero algunos no tienen subtotales
+                        if sub > tot and sub < total[c1+1]:
+                            lista.append(lista_fila[sub])
+                    except:
+                        if sub > tot:
+                            lista.append(lista_fila[sub])
+                # print(lista)
                 aritmetic = evaluador_suma(lista,f'fila{c+1}')
                 if aritmetic:
                    
@@ -1099,6 +1135,7 @@ def totales_fila(df,autosuma):
                         errores['aritmetico']+=aritmetic
                     if 'aritmetico' not in errores:
                         errores['aritmetico'] = aritmetic
+                c1 += 1
             c += 1
         # ahora se revisan los subtotales con sus desagregados
         rsubtotal = subtotal+[]#un respaldo de subtotal por si se necesita después
@@ -1207,7 +1244,7 @@ def evaluador_suma(lista,indi):
         if type(total) != str:
             if total != suma:
                 if total >= 0 and comprobar == 'No' and suma > 0:
-                    errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}')
+                    errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}(Total = {total}vs Suma de desagregados = {suma})')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
             
