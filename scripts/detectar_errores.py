@@ -248,7 +248,7 @@ def consistencia(cuestionario,pregunta):
                                 errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                                 continue
                         #de llegar aquí, entonces sí hay compatibilidad
-                        print(compatible)
+                        # print(compatible)
                         #conseguir los valores de la tabla en pregunta actual
                         valor_conseguir_p_actual = compatible['rel'][0]
                         instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -382,7 +382,19 @@ def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
                 res['p_comp'].append(c)
                 break
             c += 1
-    
+    #comprobar si hay desagregados para añadirlos a los indices
+    if 'su desagregación' in tx:
+        aver = analizarT(t1, t2)
+        if res['p_act']:
+            partida = res['p_act'][0]
+            for val in aver['p_act']:
+                if val > partida:
+                    res['p_act'].append(val)
+        if res['p_comp']:
+            partida = res['p_comp'][0]
+            for val in aver['p_comp']:
+                if val > partida:
+                    res['p_comp'].append(val)
     return res
 
 def encontrar_comillas(texto):
@@ -681,7 +693,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
             return pa_val
         if tabla1.isna().any().any():#tablas NT desagregados
             for col in tabla:
-                if prim in col:
+                if col.starswith(prim):
                     posibles.append(c)
                 c += 1
             sec = int(numeral[1])-1
@@ -690,7 +702,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
         
         for indice in index_tab:
 
-            if prim in indice:
+            if indice.startswith(prim):
                 posibles.append(c)
             c += 1
         sec = int(numeral[1])-1 #para buscar la segunda parte del numeral, si fuese 3.1, aquí se buscaría el 1, menos uno para obtener el índice de la lista posibles
@@ -698,7 +710,26 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
         pa_val = list(tabla.iloc[posibles[sec],1:])
         
         return pa_val #aqui retorna toda la fila del numeral
-
+    if 'numeral_suma' in tipo_val:#numeral que tiene que ser sumado
+        divi = tipo_val.split()
+        numeral = divi[1]
+        filas_asumar = []
+        c = 0
+        for fila in list(tabla.iloc[:,0]):
+            if numeral in fila:
+                filas_asumar.append(c)
+            if filas_asumar:
+                if c - filas_asumar[-1] > 2: #esto es por si hay numeral 1 y la tabla tiene hasta numeral 10, no se busca sumar ese numeral también
+                    break
+            c += 1
+        #hacer la suma de las filas
+        dfinteres = tabla.iloc[filas_asumar,1:]
+        pa_val = []
+        for col in dfinteres:
+            suma = sumar_fila(list(dfinteres[col]))
+            pa_val.append(suma[0])
+        return pa_val
+        
     if not indices:
         if 'Total' in list(tabla.columns):
             pa_val = list(tabla['Total'])
@@ -724,7 +755,7 @@ def sumar_fila(lista):
                 NS = 1
         else:
             res += valor
-    if valor == 0:
+    if res == 0:
         if NA > 0 and NS > 0:
             res = 'NS'
         if NS > 0 and NA == 0:
@@ -746,7 +777,11 @@ def analizarIns(texto):
             #     numeral = 'autosuma' #para caso especifico de pregunta que no es tabala y genera una de filas unicas
             # except:
             numeral = 'numeral_fila '+ nt1[0]
-        # if 'suma'
+        if 'suma' in texto:
+            nt = texto.split('numeral')
+            nt1 = nt[1].split()
+            numeral = 'numeral_suma '+ nt1[0]
+            
         return numeral
     if 'suma' in texto or 'recuadro' in texto:
         if 'suma de las cantidades registradas' in texto and not 'columna' in texto and not 'numeral' in texto:

@@ -468,7 +468,13 @@ class clase_pregunta():
             if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                 break
             # print(nuevo_df.columns)
-            if uno in list(nuevo_df['Unnamed: 2']): #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
+            Revisar = 0
+            for val11 in list(nuevo_df['Unnamed: 2']):
+                if type(val11) == str:
+                    if val11.startswith(uno):
+                        Revisar = 1
+            # print(Revisar)
+            if uno in list(nuevo_df['Unnamed: 2']) or Revisar == 1: #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
                 self.T_tip = 'index'
                 comprobador.append(1)
                 c = 0
