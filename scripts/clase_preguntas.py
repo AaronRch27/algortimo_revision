@@ -223,6 +223,7 @@ class clase_pregunta():
             self.autosuma
         except:#esta excepcion es porque aveces no se genera el atributo autosuma en borrarS
             self.autosuma = 'No'
+        self.encabezado_tabla = []
         medidas = df.shape
         # print(medidas)
         if medidas[0] < 25: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
@@ -516,6 +517,7 @@ class clase_pregunta():
             # print('hastaqui bien')
             self.T_tip = 'unifila'
             nuevo_df = nuevo_df.fillna('borra')
+            self.encabezado_tabla = nuevo_df.iloc[:-1,:]
             nombres = []
             for col in nuevo_df:
                 ap = list(nuevo_df[col])

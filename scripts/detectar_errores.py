@@ -235,7 +235,7 @@ def consistencia(cuestionario,pregunta):
                         tablaC = pregunta_c.tablas[1]
                         # compatible = analizarT(tablaA,tablaC)
                         # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
-                        compatible = analizar_tex_instr(tablaA,tablaC,instru)
+                        compatible = analizar_tex_instr(tablaA,tablaC,instru,pregunta.encabezado_tabla,pregunta_c.encabezado_tabla)
                         if not compatible:
                             
                             #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
@@ -291,7 +291,7 @@ def consistencia(cuestionario,pregunta):
         
     return errores
 
-def analizar_tex_instr(t1,t2,tx):
+def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
     "t1 y 2 son dataframes, tx es string instruccion. Regresa dict con filas o columnas compatibles(su indice)"    
     res = {}
     tx = tx.lower()
@@ -308,18 +308,32 @@ def analizar_tex_instr(t1,t2,tx):
         res['rel'][1] = 'fila'
         
     st, v = encontrar_comillas(textos[0])
+    # print(st,v)
     if v:
-        st = v
-    falta agregar la lectura de encabezado de tabla
+        c = 0
+        for col in encabezadoA:
+            encabezadoA = encabezadoA.fillna('borra')
+            lista = list(encabezadoA[col])
+            borras = []
+            for val in lista:
+                if v in val.lower():
+                    res['p_act'].append(c)
+                if val == 'borra':
+                    borras.append(1)
+            if len(borras) == len(lista):
+                c -= 1 #esa columna no cuenta, y para no borrarla, solo se le resta uno al contador
+            c += 1
+
     #comparar palabra obtenida entre comillas con lista de nombres de columnas pregunta actual
-    col = list(t1.columns)
-    c = 0
-    for co in col: #encontrar la coincidencia con los nombres de columnas
-        co = co.lower()
-        if st in co:
-            res['p_act'].append(c)
-            break
-        c += 1
+    if not v:
+        col = list(t1.columns)
+        c = 0
+        for co in col: #encontrar la coincidencia con los nombres de columnas
+            co = co.lower()
+            if st in co:
+                res['p_act'].append(c)
+                break
+            c += 1
     #ahora hacer lo mismo pero para pregunta de comparación
     # print(tx)
     if 'numeral' in textos[1]:
@@ -341,20 +355,38 @@ def analizar_tex_instr(t1,t2,tx):
     # if not 'numeral' in textos[1]:
         # res['rel'].append('columna')
     st, v = encontrar_comillas(textos[1])
+    # print(st,v)
     if v:
-        st = v
-    col = list(t2.columns)
-    c = 0
-    for co in col: #encontrar la coincidencia con los nombres de columnas
-        co = co.lower()
-        if st in co:
-            res['p_comp'].append(c)
-            break
-        c += 1
+        # print('aja',v)
+        c = 0
+        for col in encabezadoC:
+            encabezadoC = encabezadoC.fillna('borra')
+            lista = list(encabezadoC[col])
+            borras = []
+            # print(lista,v)
+            for val in lista:
+                
+                if v in val.lower():
+                    res['p_comp'].append(c)
+                if val == 'borra':
+                    borras.append(1)
+            if len(borras) == len(lista):
+                c -= 1 #esa columna no cuenta, y para no borrarla, solo se le resta uno al contador
+            c += 1
+    if not v:
+        col = list(t2.columns)
+        c = 0
+        for co in col: #encontrar la coincidencia con los nombres de columnas
+            co = co.lower()
+            if st in co:
+                res['p_comp'].append(c)
+                break
+            c += 1
     
     return res
 
 def encontrar_comillas(texto):
+
     st = ''
     stl = ''
     c = 0
@@ -364,14 +396,16 @@ def encontrar_comillas(texto):
                 
                 if le != '"':
                     st += le
+                    c += 1
                 else:
                     break
             break
         c += 1
+    # print(texto[c+2:])
+    for letra in texto[c+2:]:
         
-    for letra in texto[c+1:]:
         if letra == '"':
-            for le in texto[c+1:]:
+            for le in texto[c+3:]:
                 
                 if le != '"':
                     stl += le
