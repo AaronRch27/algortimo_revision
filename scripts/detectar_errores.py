@@ -184,109 +184,109 @@ def consistencia(cuestionario,pregunta):
     #segundo paso, otro filtro de instrucciones de comparacion mayor menor o igual
 
     for instru in ins_cons:
-        try:
+        # try:
         # print(instru)
-            op = 0
-            rev = instru.lower()
-            if 'igual' in rev:
-                op = 1
-    
-            if 'menor' in rev:
-                op = 2
-    
-            if 'mayor' in rev:
-                op = 3
-      
-            if op == 0:
-                # errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
-                pass
-            
-            if op > 0: 
-                comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
-    
-                if comparar == 'misma':#La validacion es con la misma pregunta
-                    tablas = pregunta.tablas
-                    
-                    for tabla in tablas:
-                        relmisma = relaciones_mis(tablas[tabla])
-                        if relmisma:
-                            if 'Consistencia' in errores:
-                                errores['Consistencia'] += relmisma['Consistencia']
-                            if 'Consistencia' in errores:
-                                errores['Consistencia'] = relmisma['Consistencia']
-                            errores['borraAr'] = 1
-                            return errores
-                        if not relmisma:
-                            
-                            errores['borraAr'] = 1
-                            return errores
-            #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
-                pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
-                if pregunta_c == 'No':#agregar advertencia para errores
-    
-                    if 'Consistencia' in errores:
-                        errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
-                    else:
-                        errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
-                else:#analizar las tablas de cada pregunta 
-                    #comprobar que solo tienen una tabla
-                    if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
-                        tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
-                        tablaC = pregunta_c.tablas[1]
-                        # compatible = analizarT(tablaA,tablaC)
-                        # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
-                        compatible = analizar_tex_instr(tablaA,tablaC,instru,pregunta.encabezado_tabla,pregunta_c.encabezado_tabla)
-                        if not compatible:
-                            
-                            #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
-                            # compatible = analizar_tex_instr(tablaA,tablaC,instru)
-                            # if not compatible:
-                            if 'Consistencia' in errores:
-                                errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
-                                continue
-                            else:
-                                errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
-                                continue
-                        #de llegar aquí, entonces sí hay compatibilidad
-                        # print(compatible)
-                        #conseguir los valores de la tabla en pregunta actual
-                        valor_conseguir_p_actual = compatible['rel'][0]
-                        instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
-                        tipo_val_pa = analizarIns(instruc_ambas[0])
-                        if pregunta.T_tip == 'index' and 0 in compatible['p_act']:
-                            compatible['p_act'].remove(0)
-                            
-                        pa_val = lista_valores(tablaA,
-                                               pregunta.autosuma,
-                                               tipo_val_pa,compatible['p_act'],
-                                               valor_conseguir_p_actual)
-            
-                        #para conseguir valores de pregunta a comparar    
-                        valor_conseguir_p_comp = compatible['rel'][1]
-                        tipo_val_pc = analizarIns(instruc_ambas[1])
-                        if pregunta_c.T_tip == 'index' and 0 in compatible['p_comp']:
-                            compatible['p_comp'].remove(0)
-                        pc_val = lista_valores(tablaC,
-                                               pregunta_c.autosuma,
-                                               tipo_val_pc,compatible['p_comp'],
-                                               valor_conseguir_p_comp)
-                        #comparar ambas listas según su operación
-                        # print(pa_val,pc_val)
-                        err = comparacion_consistencia(op,pa_val,pc_val,comparar)
-                        if err:
-                            if 'Consistencia' in errores:
-                                errores['Consistencia'] += err['Consistencia']
-                                continue
-                            else:
-                                errores = err
-                                continue
-        except:
-            if 'Consistencia' in errores:
-                errores['Consistencia'].append(f'Instrucción "{instru}" no pudo ser validada.')
-                continue
-            else:
-                errores['Consistencia'] = [f'Instrucción "{instru}" no pudo ser validada.']
-                continue
+        op = 0
+        rev = instru.lower()
+        if 'igual' in rev:
+            op = 1
+
+        if 'menor' in rev:
+            op = 2
+
+        if 'mayor' in rev:
+            op = 3
+  
+        if op == 0:
+            # errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
+            pass
+        
+        if op > 0: 
+            comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
+
+            if comparar == 'misma':#La validacion es con la misma pregunta
+                tablas = pregunta.tablas
+                
+                for tabla in tablas:
+                    relmisma = relaciones_mis(tablas[tabla])
+                    if relmisma:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] += relmisma['Consistencia']
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] = relmisma['Consistencia']
+                        errores['borraAr'] = 1
+                        return errores
+                    if not relmisma:
+                        
+                        errores['borraAr'] = 1
+                        return errores
+        #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
+            pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
+            if pregunta_c == 'No':#agregar advertencia para errores
+
+                if 'Consistencia' in errores:
+                    errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
+                else:
+                    errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
+            else:#analizar las tablas de cada pregunta 
+                #comprobar que solo tienen una tabla
+                if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
+                    tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
+                    tablaC = pregunta_c.tablas[1]
+                    # compatible = analizarT(tablaA,tablaC)
+                    # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
+                    compatible = analizar_tex_instr(tablaA,tablaC,instru,pregunta.encabezado_tabla,pregunta_c.encabezado_tabla)
+                    if not compatible:
+                        
+                        #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
+                        # compatible = analizar_tex_instr(tablaA,tablaC,instru)
+                        # if not compatible:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
+                            continue
+                        else:
+                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
+                            continue
+                    #de llegar aquí, entonces sí hay compatibilidad
+                    # print(compatible)
+                    #conseguir los valores de la tabla en pregunta actual
+                    valor_conseguir_p_actual = compatible['rel'][0]
+                    instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
+                    tipo_val_pa = analizarIns(instruc_ambas[0],rev)
+                    if pregunta.T_tip == 'index' and 0 in compatible['p_act']:
+                        compatible['p_act'].remove(0)
+                        
+                    pa_val = lista_valores(tablaA,
+                                           pregunta.autosuma,
+                                           tipo_val_pa,compatible['p_act'],
+                                           valor_conseguir_p_actual)
+        
+                    #para conseguir valores de pregunta a comparar    
+                    valor_conseguir_p_comp = compatible['rel'][1]
+                    tipo_val_pc = analizarIns(instruc_ambas[1],rev)
+                    if pregunta_c.T_tip == 'index' and 0 in compatible['p_comp']:
+                        compatible['p_comp'].remove(0)
+                    pc_val = lista_valores(tablaC,
+                                           pregunta_c.autosuma,
+                                           tipo_val_pc,compatible['p_comp'],
+                                           valor_conseguir_p_comp)
+                    #comparar ambas listas según su operación
+                    print(pa_val,pc_val)
+                    err = comparacion_consistencia(op,pa_val,pc_val,comparar)
+                    if err:
+                        if 'Consistencia' in errores:
+                            errores['Consistencia'] += err['Consistencia']
+                            continue
+                        else:
+                            errores = err
+                            continue
+        # except:
+        #     if 'Consistencia' in errores:
+        #         errores['Consistencia'].append(f'Instrucción "{instru}" no pudo ser validada.')
+        #         continue
+        #     else:
+        #         errores['Consistencia'] = [f'Instrucción "{instru}" no pudo ser validada.']
+        #         continue
                 #algo distinto para más de una tabla
         
     return errores
@@ -385,6 +385,8 @@ def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
     #comprobar si hay desagregados para añadirlos a los indices
     if 'su desagregación' in tx:
         aver = analizarT(t1, t2)
+        if not aver:
+            return res
         if res['p_act']:
             partida = res['p_act'][0]
             for val in aver['p_act']:
@@ -655,8 +657,17 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
     if valor_conseguir == 'columna':
                         
         if autosuma == 'Si' and tipo_val == 'autosuma':
+            
             pa_val = list(tabla.iloc[-1,:])
-    
+            
+        if autosuma == 'Si' and tipo_val == 'NT_allc':
+            
+            pa_val = list(tabla.iloc[:,indices[0]]) #tal vez genere un error después por los indices
+            #como es pregunta de NT_desagregados hay que hacer una correccion en el orden de los datos
+            pa_val = [pa_val[-1]] + pa_val[:-1]
+            
+            return pa_val
+            
         if autosuma == 'No' and tipo_val == 'autosuma':
             pa_val = []
             for col in tabla:
@@ -764,7 +775,7 @@ def sumar_fila(lista):
             res = 'NA'
     return [res]
 
-def analizarIns(texto):
+def analizarIns(texto,instr):
     "analiza el texto de la instrucción, regresa string de autosuma o int de numeral para hacer la comparación"
     # print(texto)
     if 'numeral' in texto:
@@ -786,7 +797,8 @@ def analizarIns(texto):
     if 'suma' in texto or 'recuadro' in texto:
         if 'suma de las cantidades registradas' in texto and not 'columna' in texto and not 'numeral' in texto:
             return 'suma todo'
-
+        if 'desagregación' in instr:
+            return 'NT_allc' #porque aqui necesitamos toda la columna, se trata de una tabla NT_desagregados
         return'autosuma'    
     
     if 'suma' not in texto and 'numeral' not in texto:
