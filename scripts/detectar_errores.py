@@ -271,7 +271,7 @@ def consistencia(cuestionario,pregunta):
                                            tipo_val_pc,compatible['p_comp'],
                                            valor_conseguir_p_comp)
                     #comparar ambas listas según su operación
-                    print(pa_val,pc_val)
+                    # print(pa_val,pc_val)
                     err = comparacion_consistencia(op,pa_val,pc_val,comparar)
                     if err:
                         if 'Consistencia' in errores:
@@ -384,9 +384,10 @@ def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
             c += 1
     #comprobar si hay desagregados para añadirlos a los indices
     if 'su desagregación' in tx:
-        aver = analizarT(t1, t2)
+        aver = analizarT(t1, t2,encabezadoA,encabezadoC)
         if not aver:
             return res
+        
         if res['p_act']:
             partida = res['p_act'][0]
             for val in aver['p_act']:
@@ -797,6 +798,8 @@ def analizarIns(texto,instr):
     if 'suma' in texto or 'recuadro' in texto:
         if 'suma de las cantidades registradas' in texto and not 'columna' in texto and not 'numeral' in texto:
             return 'suma todo'
+        if 'columna' in texto:
+            return 'autosuma'
         if 'desagregación' in instr:
             return 'NT_allc' #porque aqui necesitamos toda la columna, se trata de una tabla NT_desagregados
         return'autosuma'    
@@ -804,7 +807,7 @@ def analizarIns(texto,instr):
     if 'suma' not in texto and 'numeral' not in texto:
         return 'unifila'
 
-def analizarT(t1,t2):
+def analizarT(t1,t2,en1,en2):
     "t1 y 2 son dataframes. Regresa dict con filas o columnas compatibles(su indice)"
     filasa = list(t1.iloc[:,0])
     filasc = list(t2.iloc[:,0])
@@ -857,7 +860,58 @@ def analizarT(t1,t2):
     res['rel'] = respuesta[c]
     res['p_act'] = ind_a[c]
     res['p_comp'] = indices[c]
+    #evaluar encabezados de ambas tablas
+    if type(en1) == list:
+        if not en1:
+            return res
+    if type(en2) == list:
+        if not en2:
+            return res
     
+    ene1 = []#esto es para sacar las prtes de arriba del encabezado y comparar lo que dicen con la de la otra tabla
+    ene2 = []
+    for col in en1:
+        lista = list(en1[col])
+        for val in lista:
+            if val != 'borra':
+                ene1.append(val)
+                break
+    for col in en2:
+        lista = list(en2[col])
+        for val in lista:
+            if val != 'borra':
+                ene2.append(val)
+                break
+    #hacer la comparación pero desde la columna uno, ya que la cero suele ser del index
+    posibles1 = []
+    posibles2 = []
+    c = 1
+    for val in ene1[1:]:
+        if val in ene2:
+            posibles1.append(c)
+        c += 1
+    c = 1
+    for val in ene2[1:]:
+        if val in ene1:
+            posibles2.append(c)
+        c += 1
+    #de esos posibles solo nos importa tener los que tienen continuidad
+    c = 0 
+    for val in posibles1[1:]:
+        if val - posibles1[c] > 1:
+            break
+        c += 1
+    definitivo1 = posibles1[:c+1]
+    
+    c = 0 
+    for val in posibles2[1:]:
+        if val - posibles2[c] > 1:
+            break
+        c += 1
+    definitivo2 = posibles2[:c+1]
+    
+    res['p_act'] = definitivo1
+    res['p_comp'] = definitivo2
     return res
 
 def buscar_pregunta(cuestionario,nombre):
