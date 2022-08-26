@@ -1322,6 +1322,12 @@ def evaluador_suma(lista,indi):
     if len(lista) < 3:#posteriormente entará otra comprobación aquí
         return 
     else:
+        columnas_ex = ['Nombre',
+                       'Clave',
+                       'Código',
+                       'Centro penitenciario',
+                       'Tipo de hecho presuntamente violatorio de derechos humanos'
+                       ]#nombres de columnas donde van valores de string y que deben ser excluidas
         errores = []
         total = lista[0]
         convertir = ['NS','NA','na','ns','Na','Ns','nA','nS','X','x']
@@ -1347,8 +1353,13 @@ def evaluador_suma(lista,indi):
             if type(valor) == str and valor not in convertir:
                 # print(valor)
                 desagregados[c] = 0
-                if valor != 'borra' and indi != 'Nombre' and indi != 'Clave':
-                    errores.append(f'Error: el valor {valor} no es permitido en {indi}')
+                if valor != 'borra':
+                    no_err = []
+                    for val in columnas_ex:
+                        if val in indi:
+                            no_err.append(1)
+                    if not no_err:
+                        errores.append(f'Error: el valor {valor} no es permitido en {indi}')
             c += 1
         suma = sum(desagregados)
         if blanco > 0:
