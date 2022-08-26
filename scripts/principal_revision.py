@@ -124,9 +124,13 @@ def procesar(hopan,seccion,modelos):
     contador = 0
     cuestionario = {}#aqui se van a almacenar las preguntas como objetos
     for preg in lista_preguntas:
-        objeto = imagen(tam_preguntas[contador], hopan, preg, seccion,modelos)
-        cuestionario[objeto.nombre] = objeto
-        print('pregunta creada con nombre ', objeto.nombre)
+        try:
+            objeto = imagen(tam_preguntas[contador], hopan, preg, seccion,modelos)
+            cuestionario[objeto.nombre] = objeto
+            print('pregunta creada con nombre ', objeto.nombre)
+        except:
+            print('No se generó pregunta')
+        
         contador += 1
         
     return cuestionario

@@ -439,6 +439,17 @@ class clase_pregunta():
     def transformar_tabla(nuevo_df,self):
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
+        medida = nuevo_df.shape
+        if medida[0] > 2000: #para borrar fila de total que está debajo de los encabezados de la tabla, porque eso genera errores de lectura
+            c = 0
+            nuevo_df = nuevo_df.reset_index(drop=True)
+            for fila in list(nuevo_df.iloc[:,2]):#iterar columna C
+                if 'Total' == fila:
+                    nuevo_df = nuevo_df.drop([c])
+                    print('borró fila ',c)
+                    nuevo_df = nuevo_df.reset_index(drop=True)
+                    break
+                c += 1
         colyfil = clase_pregunta.imagen(nuevo_df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1) #forzozamente debe arrojar al menos dos numeros dentro de la lista
         if not espacios or len(espacios)==1:

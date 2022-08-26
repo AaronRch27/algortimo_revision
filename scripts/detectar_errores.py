@@ -34,7 +34,7 @@ def errores(cuestionario,nombre):
     errores = depurar(errores)
 
     generar_formato(errores, censo, nombre)
-    print(errores)
+    # print(errores)
     return errores
 
 
@@ -117,25 +117,25 @@ def iterar_cuestionario(cuestionario):
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             # modo excepcion:
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-            #modo localizar errores:
-            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-            if consist:
+            # try:
+            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # #modo localizar errores:
+            # # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            # if consist:
                 
-                if pregunta in errores:
-                    try:
-                        errores[pregunta].append(consist)
-                    except:#si existe eror previo puede que no sea lista sin dict
-                        for k in consist:
-                            if k in errores[pregunta]:
-                                errores[pregunta][k] += consist[k]
-                            if k not in errores[pregunta]:
-                                errores[pregunta][k] = consist[k]
-                if pregunta not in errores:
-                    errores[pregunta] = consist
+            #     if pregunta in errores:
+            #         try:
+            #             errores[pregunta].append(consist)
+            #         except:#si existe eror previo puede que no sea lista sin dict
+            #             for k in consist:
+            #                 if k in errores[pregunta]:
+            #                     errores[pregunta][k] += consist[k]
+            #                 if k not in errores[pregunta]:
+            #                     errores[pregunta][k] = consist[k]
+            #     if pregunta not in errores:
+            #         errores[pregunta] = consist
             
     return errores, censo
 
@@ -1347,7 +1347,7 @@ def evaluador_suma(lista,indi):
             if type(valor) == str and valor not in convertir:
                 # print(valor)
                 desagregados[c] = 0
-                if valor != 'borra':
+                if valor != 'borra' and indi != 'Nombre' and indi != 'Clave':
                     errores.append(f'Error: el valor {valor} no es permitido en {indi}')
             c += 1
         suma = sum(desagregados)
