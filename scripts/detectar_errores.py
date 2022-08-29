@@ -122,20 +122,20 @@ def iterar_cuestionario(cuestionario):
             # except:
             #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             # #modo localizar errores:
-            # # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-            # if consist:
+            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            if consist:
                 
-            #     if pregunta in errores:
-            #         try:
-            #             errores[pregunta].append(consist)
-            #         except:#si existe eror previo puede que no sea lista sin dict
-            #             for k in consist:
-            #                 if k in errores[pregunta]:
-            #                     errores[pregunta][k] += consist[k]
-            #                 if k not in errores[pregunta]:
-            #                     errores[pregunta][k] = consist[k]
-            #     if pregunta not in errores:
-            #         errores[pregunta] = consist
+                if pregunta in errores:
+                    try:
+                        errores[pregunta].append(consist)
+                    except:#si existe eror previo puede que no sea lista sin dict
+                        for k in consist:
+                            if k in errores[pregunta]:
+                                errores[pregunta][k] += consist[k]
+                            if k not in errores[pregunta]:
+                                errores[pregunta][k] = consist[k]
+                if pregunta not in errores:
+                    errores[pregunta] = consist
             
     return errores, censo
 
@@ -248,7 +248,7 @@ def consistencia(cuestionario,pregunta):
                             errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                             continue
                     #de llegar aquí, entonces sí hay compatibilidad
-                    # print(compatible)
+                    print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -271,7 +271,7 @@ def consistencia(cuestionario,pregunta):
                                            tipo_val_pc,compatible['p_comp'],
                                            valor_conseguir_p_comp)
                     #comparar ambas listas según su operación
-                    # print(pa_val,pc_val)
+                    print(pa_val,pc_val)
                     err = comparacion_consistencia(op,pa_val,pc_val,comparar)
                     if err:
                         if 'Consistencia' in errores:
@@ -652,7 +652,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
     lista. list. Lista con los valores que serán comparados
 
     """
-    # print(autosuma,tipo_val,indices,valor_conseguir)
+    print(autosuma,tipo_val,indices,valor_conseguir)
     tabla = tabla1.fillna(0)#en este punto está bien cambiar los Nan por cero ya que no se busca comprobación de blancos
     #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
     if valor_conseguir == 'columna':
@@ -660,10 +660,19 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
         if autosuma == 'Si' and tipo_val == 'autosuma':
             
             pa_val = list(tabla.iloc[-1,:])
+        
+        if autosuma == 'Si' and tipo_val == 'Toda la columna':
+            
+            pa_val = list(tabla.iloc[:,indices[0]])
+            return pa_val
             
         if autosuma == 'Si' and tipo_val == 'NT_allc':
             
-            pa_val = list(tabla.iloc[:,indices[0]]) #tal vez genere un error después por los indices
+            if indices:
+                pa_val = list(tabla.iloc[:,indices[0]]) #tal vez genere un error después por los indices (no hay)
+            if not indices:
+                pa_val = list(tabla.iloc[:,1])
+                return pa_val
             #como es pregunta de NT_desagregados hay que hacer una correccion en el orden de los datos
             pa_val = [pa_val[-1]] + pa_val[:-1]
             
@@ -705,7 +714,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
             return pa_val
         if tabla1.isna().any().any():#tablas NT desagregados
             for col in tabla:
-                if col.starswith(prim):
+                if col.startswith(prim):
                     posibles.append(c)
                 c += 1
             sec = int(numeral[1])-1
@@ -803,6 +812,8 @@ def analizarIns(texto,instr):
         if 'desagregación' in instr:
             return 'NT_allc' #porque aqui necesitamos toda la columna, se trata de una tabla NT_desagregados
         return'autosuma'    
+    if 'ara cada' in texto:#aqui llega porque no hay numeral ni palabra suma en el texto pero sí hay para cada elemento, es decir, comparar toda la columna
+        return'Toda la columna'
     
     if 'suma' not in texto and 'numeral' not in texto:
         return 'unifila'
@@ -1325,6 +1336,7 @@ def evaluador_suma(lista,indi):
         columnas_ex = ['Nombre',
                        'Clave',
                        'Código',
+                       'Codigo',
                        'Centro penitenciario',
                        'Tipo de hecho presuntamente violatorio de derechos humanos'
                        ]#nombres de columnas donde van valores de string y que deben ser excluidas
@@ -1384,7 +1396,7 @@ def evaluador_suma(lista,indi):
         if total in convertir and suma == 0:
             if total.lower() == 'na' and ns == 'Si':
                 errores.append(f'Error: Si el total es NA ninguno de sus desagregados puede ser NS para {indi}')
-        if type(total) == str and total not in convertir:
+        if type(total) == str and total not in convertir and not no_err:
             errores.append(f'Error: el total es un valor no permitido como respuesta en {indi}')
             return errores
         if type(total) != str:

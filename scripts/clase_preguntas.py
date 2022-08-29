@@ -446,7 +446,7 @@ class clase_pregunta():
             for fila in list(nuevo_df.iloc[:,2]):#iterar columna C
                 if 'Total' == fila:
                     nuevo_df = nuevo_df.drop([c])
-                    print('borró fila ',c)
+                    # print('borró fila ',c)
                     nuevo_df = nuevo_df.reset_index(drop=True)
                     break
                 c += 1
@@ -528,6 +528,8 @@ class clase_pregunta():
                     if nombre not in val:
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
                     cn += 1
+                if 'Código1' in val:
+                    val.pop('Código1') #borrar porque esta columna es un error
                 nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
         if not comprobador: #tabla de filas unicas
@@ -562,7 +564,8 @@ class clase_pregunta():
                 #     val[nombre] = nl
                 if nombre not in val:
                     val[nombre] = [ap[-1]]
-           
+            if 'Código1' in val:
+                val.pop('Código1') #borrar porque esta columna es un error
             nuevo_df = pd.DataFrame(val)    
         return nuevo_df
     
