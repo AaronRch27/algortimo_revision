@@ -248,7 +248,7 @@ def consistencia(cuestionario,pregunta):
                             errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
                             continue
                     #de llegar aquí, entonces sí hay compatibilidad
-                    print(compatible)
+                    # print(compatible)
                     #conseguir los valores de la tabla en pregunta actual
                     valor_conseguir_p_actual = compatible['rel'][0]
                     instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
@@ -271,7 +271,7 @@ def consistencia(cuestionario,pregunta):
                                            tipo_val_pc,compatible['p_comp'],
                                            valor_conseguir_p_comp)
                     #comparar ambas listas según su operación
-                    print(pa_val,pc_val)
+                    # print(pa_val,pc_val)
                     err = comparacion_consistencia(op,pa_val,pc_val,comparar)
                     if err:
                         if 'Consistencia' in errores:
@@ -652,7 +652,7 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
     lista. list. Lista con los valores que serán comparados
 
     """
-    print(autosuma,tipo_val,indices,valor_conseguir)
+    # print(autosuma,tipo_val,indices,valor_conseguir)
     tabla = tabla1.fillna(0)#en este punto está bien cambiar los Nan por cero ya que no se busca comprobación de blancos
     #nota: siguene pendientes condicionales para otro tipo de busquedas, como las de fila
     if valor_conseguir == 'columna':
