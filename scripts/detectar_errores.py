@@ -117,12 +117,12 @@ def iterar_cuestionario(cuestionario):
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             # modo excepcion:
-            # try:
-            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            try:
+                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            except:
+                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
             # #modo localizar errores:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             if consist:
                 
                 if pregunta in errores:
@@ -662,10 +662,13 @@ def lista_valores(tabla1,autosuma,tipo_val,indices,valor_conseguir):
             pa_val = list(tabla.iloc[-1,:])
         
         if autosuma == 'Si' and tipo_val == 'Toda la columna':
+            if len(indices)>1:
+                pa_val = list(tabla.iloc[-1,indices])
+                return pa_val
             
             pa_val = list(tabla.iloc[:,indices[0]])
             return pa_val
-            
+        
         if autosuma == 'Si' and tipo_val == 'NT_allc':
             
             if indices:
@@ -808,6 +811,8 @@ def analizarIns(texto,instr):
         if 'suma de las cantidades registradas' in texto and not 'columna' in texto and not 'numeral' in texto:
             return 'suma todo'
         if 'columna' in texto:
+            # if 'desagregación' in instr:
+            #     return 'fila autosuma'
             return 'autosuma'
         if 'desagregación' in instr:
             return 'NT_allc' #porque aqui necesitamos toda la columna, se trata de una tabla NT_desagregados
