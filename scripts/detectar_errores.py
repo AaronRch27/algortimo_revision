@@ -91,6 +91,7 @@ def iterar_cuestionario(cuestionario):
                     continue
                 df = tablas[tabla].copy()#con copia para no afectar el frame original
                 ndf = quitar_sinonosabe(df)
+                aritme? = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
                 if cuestionario[llave][pregunta].tipo_T == 'Tabla':
                     aritmeticos = totales_fila(ndf,cuestionario[llave][pregunta].autosuma)
                     if aritmeticos:
@@ -121,23 +122,47 @@ def iterar_cuestionario(cuestionario):
             #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
             # except:
             #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-            # #modo localizar errores:
-            consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-            if consist:
+            # # #modo localizar errores:
+            # # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            # if consist:
                 
-                if pregunta in errores:
-                    try:
-                        errores[pregunta].append(consist)
-                    except:#si existe eror previo puede que no sea lista sin dict
-                        for k in consist:
-                            if k in errores[pregunta]:
-                                errores[pregunta][k] += consist[k]
-                            if k not in errores[pregunta]:
-                                errores[pregunta][k] = consist[k]
-                if pregunta not in errores:
-                    errores[pregunta] = consist
+            #     if pregunta in errores:
+            #         try:
+            #             errores[pregunta].append(consist)
+            #         except:#si existe eror previo puede que no sea lista sin dict
+            #             for k in consist:
+            #                 if k in errores[pregunta]:
+            #                     errores[pregunta][k] += consist[k]
+            #                 if k not in errores[pregunta]:
+            #                     errores[pregunta][k] = consist[k]
+            #     if pregunta not in errores:
+            #         errores[pregunta] = consist
             
     return errores, censo
+
+def exam_aritme(df,context):
+    """
+    
+
+    Parameters
+    ----------
+    df : dataframe de la pregunta ya sin los catálogos sinonosabe
+    context : objeto pregunta para tener en cuenta el
+        contexto de la tabla
+
+    Returns
+    -------
+    es : bool Si o No para ver si se hace la validacion aritmetica
+    dff : dataframe con lo que debe entrar a esa comparación
+        manteniendo una columna de index si fuera el caso de 
+        tablas de más de una fila.
+        dff también puede regresar un cero si variable "es" 
+        vale No.
+
+    """
+    
+    
+    return es , ddf
 
 def tabla_vacia(df):
     med = df.shape
@@ -1335,12 +1360,15 @@ def evaluador_suma(lista,indi):
     else:
         columnas_ex = ['Nombre',
                        'Clave',
+                       'No aplica',
+                       'Tipo de delito'
                        'Código',
-                       'Codigo',
+                       'Código ',
                        'Centro penitenciario',
                        'Tipo de hecho presuntamente violatorio de derechos humanos'
                        ]#nombres de columnas donde van valores de string y que deben ser excluidas
         errores = []
+        no_err = []
         total = lista[0]
         convertir = ['NS','NA','na','ns','Na','Ns','nA','nS','X','x']
         na = 'No'
@@ -1366,7 +1394,7 @@ def evaluador_suma(lista,indi):
                 # print(valor)
                 desagregados[c] = 0
                 if valor != 'borra':
-                    no_err = []
+                    
                     for val in columnas_ex:
                         if val in indi:
                             no_err.append(1)
@@ -1380,12 +1408,12 @@ def evaluador_suma(lista,indi):
                 if len(lista) == blanco:
                     
                     return
-                else:
-                    errores.append(f'{indi} Hay espacios en blanco')
-                    return errores
-            if total != 'borra':
-                errores.append(f'{indi} Hay espacios en blanco')
-                return errores
+            #     else:
+            #         errores.append(f'{indi} Hay espacios en blanco')
+            #         return errores
+            # if total != 'borra':
+            #     errores.append(f'{indi} Hay espacios en blanco')
+            #     return errores
         if total == 0:
             if ns == 'Si':
                 errores.append(f'{indi} Si el total es cero, valores de desagregados no pueden ser NS o mayores a cero')
