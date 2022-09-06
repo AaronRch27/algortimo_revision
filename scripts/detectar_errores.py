@@ -91,14 +91,20 @@ def iterar_cuestionario(cuestionario):
                     continue
                 df = tablas[tabla].copy()#con copia para no afectar el frame original
                 ndf = quitar_sinonosabe(df)
-                if cuestionario[llave][pregunta].tipo_T == 'Tabla':
-                    aritmeticos = totales_fila(ndf,cuestionario[llave][pregunta].autosuma)
-                    if aritmeticos:
-                        errores[pregunta] = aritmeticos
-                if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
-                    aritmeticos = totales_columna(ndf)
-                    if aritmeticos:
-                        errores[pregunta] = aritmeticos
+                aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
+                if aritme1 == 'Si':
+                    if cuestionario[llave][pregunta].tipo_T == 'Tabla':
+                        aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
+                        if aritmeticos:
+                            errores[pregunta] = aritmeticos
+                    if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
+                        aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
+                        if aritmeticos:
+                            errores[pregunta] = aritmeticos
+                    if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
+                        aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta])
+                        if aritmeticos:
+                            errores[pregunta] = aritmeticos
             #validación para todas las preguntas de si no no se sabe.
                 otra_copia = tablas[tabla].copy()
                 sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
@@ -117,27 +123,290 @@ def iterar_cuestionario(cuestionario):
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             # modo excepcion:
-            try:
-                consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            except:
-                consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-            # #modo localizar errores:
-            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-            if consist:
+
+            # try:
+            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+            # except:
+            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+            # # #modo localizar errores:
+            # # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            # if consist:
                 
-                if pregunta in errores:
-                    try:
-                        errores[pregunta].append(consist)
-                    except:#si existe eror previo puede que no sea lista sin dict
-                        for k in consist:
-                            if k in errores[pregunta]:
-                                errores[pregunta][k] += consist[k]
-                            if k not in errores[pregunta]:
-                                errores[pregunta][k] = consist[k]
-                if pregunta not in errores:
-                    errores[pregunta] = consist
+            #     if pregunta in errores:
+            #         try:
+            #             errores[pregunta].append(consist)
+            #         except:#si existe eror previo puede que no sea lista sin dict
+            #             for k in consist:
+            #                 if k in errores[pregunta]:
+            #                     errores[pregunta][k] += consist[k]
+            #                 if k not in errores[pregunta]:
+            #                     errores[pregunta][k] = consist[k]
+            #     if pregunta not in errores:
+            #         errores[pregunta] = consist
             
     return errores, censo
+
+def val_delitos(df,context):
+    """
+    
+
+    Parameters
+    ----------
+    df : dataframe de la pregunta ya sin los catálogos sinonosabe y
+        también con el filtro de si hay algo más en la prgeunta que
+        no deba ser validado con el total
+    context : objeto pregunta para tener en cuenta el
+        contexto de la tabla
+
+    Returns
+    -------
+    errores: dict. Diccionario con errores detectados
+
+    """
+    errores = {}
+    #validar fila por fila#######################
+    total = []
+    subtotal = []
+    c = 0
+    for colum in df:
+        if 'Total' in str(colum):
+            total.append(c)
+        if 'Subtotal' in str(colum):
+            subtotal.append(c)
+        c += 1
+    # print(total,subtotal,df.shape)
+    
+    if total and not subtotal:
+        c = 0
+        for tot in total:
+            c1 = 0
+            
+            for fila in list(df.iloc[:,0]):
+                
+                try:
+                    lista = list(df.iloc[c1, tot:total[c+1]])
+                except:
+                    lista = list(df.iloc[c1, tot:])
+                aritmetic = evaluador_suma(lista,f'fila{c1+1}')
+                if aritmetic:
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
+                
+                c1 += 1
+            c += 1
+    
+    if total and subtotal:
+        desagre_totales = [] #lista de los totales de desagregados
+        limites = []
+        c = 0
+        for tota in total:
+            try: #esto es para cuando hay más de un total y alguno de ellos u otro tiene desagregados
+                if subtotal[0] > total[c+1]:
+                    limites.append(total[c+1])
+                    c += 1
+                    continue
+            except:
+                pass
+            for sub in subtotal:
+                if sub > tota:
+                    limites.append(sub) #límites tendrá un numero por cada elemento mayor a cada total detectado
+                    break
+            c += 1
+                
+        c = 0
+        for limite in limites:#generar listas con columnas intermedias entre un total y su primer subtotal
+            if limite-total[c]>0:
+                lista_columnas =[i for i in range(total[c]+1,limite)]#el mas uno es porque necesitamos saber la columna a partir del total
+            else:
+                lista_columnas =[i for i in range(total[c],limite)]
+            desagre_totales.append(lista_columnas)
+            c += 1
+        # print(limites,desagre_totales,total, subtotal)
+        #hacer listas de cada total desagregado con sus respectivos desagregados
+        for desa in desagre_totales:
+            ref = len(desa)
+            comp = []
+            c = 0
+            for sub in subtotal:
+                if c > 0:
+                    resta = sub - subtotal[c-1] - 1 #menos uno para quitar la columna del subtotal y que solo queden las de los desagregados
+                    comp.append(resta)
+                c += 1
+            cant_col = df.shape
+            resta = cant_col[1]-subtotal[-1] - 1
+            comp.append(resta) #porque en la iteración falta el último subtotal contra la cantidad de columnas
+            # print(ref,comp,desagre_totales)
+            #hacer las listas y enviar a la funcion evaluadora por los totales/desagregados en los subtotales
+
+            c2 = 1 #tiene que iniciar desde 1 porque no deseamos almacenar el valor del subtotal sino del que sigue
+            for des in desa:
+
+                c = 0
+                for fila in list(df.iloc[:,0]):#primero se itera por fila del df
+                    lista_fila = list(df.iloc[c,:])#se saca la lista de los valores de la fila
+                    lista = [lista_fila[des]] #esta es la lista que eventualmente pasará a ser evaluda. Inicia con el total del desagregado y se complementa con los desagregados de cada subtotal
+                    c1 = 0
+                    for sub in subtotal:
+                        if sub > des: #para no trabajar con subtotales de otro total
+                            if comp[c1] == ref:
+                                agregar =  lista_fila[sub+c2]
+                                lista.append(agregar)
+                            if comp[c1] > ref:
+                                div = comp[c1]//ref
+                                for i in range(div):
+                                    aumento = ref*i
+                                    agregar = lista_fila[sub+c2+aumento]
+                                    lista.append(agregar)
+                            
+                        c1 += 1
+                    
+                    aritmetic = evaluador_suma(lista,f'fila{c+1}')
+                    
+                    if aritmetic:
+                        if 'aritmetico' in errores:
+                            errores['aritmetico']+=aritmetic
+                        if 'aritmetico' not in errores:
+                            errores['aritmetico'] = aritmetic
+                    c += 1
+                c2 += 1
+            #en el ciclo for que conluye, se revisan únicamente los desagregados del total
+        # a continuación se revisa el total con sus subtotales
+        c = 0
+        for fila in list(df.iloc[:,0]):
+            lista_fila = list(df.iloc[c,:])
+            c1 = 0
+            for tot in total:
+                lista = [lista_fila[tot]]
+                for sub in subtotal:
+                    try: #para atender casos donde hay varios totales pero algunos no tienen subtotales
+                        if sub > tot and sub < total[c1+1]:
+                            lista.append(lista_fila[sub])
+                    except:
+                        if sub > tot:
+                            lista.append(lista_fila[sub])
+                # print(lista)
+                aritmetic = evaluador_suma(lista,f'fila{c+1}')
+                if aritmetic:
+                   
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
+                c1 += 1
+            c += 1
+        # ahora se revisan los subtotales con sus desagregados
+        rsubtotal = subtotal+[]#un respaldo de subtotal por si se necesita después
+        subtotal += total #se juntan para validar todo de una vez, cada uno por separado con sus desagregados
+        subtotal.sort()
+        # print(subtotal)
+        c = 0
+        for fila in list(df.iloc[:,0]):
+            lista_fila = list(df.iloc[c,:])
+            c1 = 0
+            for sub in subtotal:
+                try:
+                    lista = lista_fila[sub:subtotal[c1+1]]
+                except:#para cuando llegue a la ultima columna de subtotales
+                    lista = lista_fila[sub:]
+                # print(lista)
+                aritmetic = evaluador_suma(lista,f'fila{c+1}')
+                if aritmetic:
+                    
+                    if 'aritmetico' in errores:
+                        errores['aritmetico']+=aritmetic
+                    if 'aritmetico' not in errores:
+                        errores['aritmetico'] = aritmetic
+                c1 += 1
+            c += 1
+    #validar columna por columna##############
+    
+    co_des = [] #codigos de desagregados, esos hay que sacarlos antes de enviar a la funcion
+    lista = list(context.tablas[1]['Código']) #Toda tabla de delitos tiene columna llamada así
+    c = 0
+    for cod in lista:
+        if len(cod) > 5:
+            co_des.append(c)
+        c += 1
+    ndf = df.copy()
+    ndf = ndf.drop(co_des)
+    nombres = list(df.columns)
+    borrar = ['Bien jurídico',
+              'Código',
+              'Tipo de delito']
+    for bor in borrar:
+        for nombre in nombres:
+            if bor in nombre:
+                ndf = ndf.drop([nombre],axis=1)
+    ndf = ndf.reset_index(drop=True)
+    # print(nombres,borrar)
+    ercol = totales_columna(ndf)
+    if ercol:
+        if 'aritmetico' in errores:
+            errores['aritmetico']+=ercol['aritmetico']
+        if 'aritmetico' not in errores:
+            errores['aritmetico'] = ercol['aritmetico']
+        print(errores)
+    #validar desagregado por desagregado(columa por columna)
+    return errores
+
+def exam_aritme(df,context):
+    """
+    
+
+    Parameters
+    ----------
+    df : dataframe de la pregunta ya sin los catálogos sinonosabe
+    context : objeto pregunta para tener en cuenta el
+        contexto de la tabla
+
+    Returns
+    -------
+    es : bool Si o No para ver si se hace la validacion aritmetica
+    dff : dataframe con lo que debe entrar a esa comparación
+        manteniendo una columna de index si fuera el caso de 
+        tablas de más de una fila.
+        dff también puede regresar un cero si variable "es" 
+        vale No.
+
+    """
+    es = 'No'
+    ddf = 0 #valores predefinidos para ambas variables. Con ello al retornar así, no se hará validacion aritmética
+    columnas = list(df.columns)
+    if 'Total' not in columnas:
+        return es , ddf
+    es = 'Si'
+    try:#porque aveces no tiene esta característica 
+        enc = context.encabezado_tabla#es un dataframe
+    except:
+        return es, df #no le hace nada al df
+    #en caso de que sí hay encabezado, revisar porque hay tablas que no se puede validar el total con todas las columnas, ya que meten otras al final que no son parte de la suma
+
+    valores_col = []
+    for col in enc:
+        lista = list(enc[col])
+        if len(lista)==1:#si solo tiene una fila de encabezado no tiene caso
+            return es, df
+        v_col = 1
+        v_col1= 0
+        for valor in lista:
+            if valor != 'borra':
+                v_col1 = v_col
+            v_col += 1
+        valores_col.append(v_col1)
+    #el primer valor de valores_col será el del index de la tabla
+    c = 1
+    ddf = df.copy()
+    # print('aqui',len(columnas),len(valores_col))
+    for ref in valores_col[1:]:
+        if ref == 0:
+            continue#son columnas vacias, eesas deben ser ignorads
+        if ref == valores_col[0]:
+            
+            ddf = ddf.drop([columnas[c]],axis=1)
+        c += 1
+    return es , ddf
 
 def tabla_vacia(df):
     med = df.shape
@@ -1340,12 +1609,15 @@ def evaluador_suma(lista,indi):
     else:
         columnas_ex = ['Nombre',
                        'Clave',
+                       'No aplica',
+                       'Tipo de delito'
                        'Código',
-                       'Codigo',
+                       'Código ',
                        'Centro penitenciario',
                        'Tipo de hecho presuntamente violatorio de derechos humanos'
                        ]#nombres de columnas donde van valores de string y que deben ser excluidas
         errores = []
+        no_err = []
         total = lista[0]
         convertir = ['NS','NA','na','ns','Na','Ns','nA','nS','X','x']
         na = 'No'
@@ -1371,7 +1643,7 @@ def evaluador_suma(lista,indi):
                 # print(valor)
                 desagregados[c] = 0
                 if valor != 'borra':
-                    no_err = []
+                    
                     for val in columnas_ex:
                         if val in indi:
                             no_err.append(1)
@@ -1379,18 +1651,19 @@ def evaluador_suma(lista,indi):
                         errores.append(f'Error: el valor {valor} no es permitido en {indi}')
             c += 1
         suma = sum(desagregados)
+        # print('llega1',total,suma)
         if blanco > 0:
             if total == 'borra':
                 blanco += 1
                 if len(lista) == blanco:
                     
                     return
-                else:
-                    errores.append(f'{indi} Hay espacios en blanco')
-                    return errores
-            if total != 'borra':
-                errores.append(f'{indi} Hay espacios en blanco')
-                return errores
+            #     else:
+            #         errores.append(f'{indi} Hay espacios en blanco')
+            #         return errores
+            # if total != 'borra':
+            #     errores.append(f'{indi} Hay espacios en blanco')
+            #     return errores
         if total == 0:
             if ns == 'Si':
                 errores.append(f'{indi} Si el total es cero, valores de desagregados no pueden ser NS o mayores a cero')
@@ -1405,8 +1678,9 @@ def evaluador_suma(lista,indi):
             errores.append(f'Error: el total es un valor no permitido como respuesta en {indi}')
             return errores
         if type(total) != str:
+            # print('llega',total,suma)
             if total != suma:
-                if total >= 0 and comprobar == 'No' and suma > 0:
+                if total != 0 and suma > 0:
                     errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}(Total = {total}vs Suma de desagregados = {suma})')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')

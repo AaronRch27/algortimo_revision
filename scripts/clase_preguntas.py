@@ -247,9 +247,13 @@ class clase_pregunta():
         if mayor > 15: #Se trata de una tabla
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df,self)
             self.tipo_T = 'Tabla'
+            #comoprobar si es tabla de delitos
+            columns = list(nuevo_df.columns)
+            if 'Tipo de delito' in columns and 'Código' in columns:
+                self.tipo_T = 'Tabla_delitos'
         else: #para los que no son tablas
             nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor,self)
-            
+                
         return nuevo_df
    
     @staticmethod
