@@ -54,6 +54,13 @@ def generar_formato(errores,censo,nombre):
                          desc,fila,pagina)
                 fila += 1
                 continue
+            if inconsistencia == 'numerales y columnas  donde otros delitos son mayores a 25%':
+                desc = ' , '.join(errores[pregunta][inconsistencia])
+                desc = 'Numerales y columnas donde otro tipo de delito supera el 25% de su bien jurídico: '+ desc
+                escribir(pregunta,'Falta de comentario explicativo sobre diferencia de la información reportada con respecto al cumplimiento de la instrucción o validaciión establecida ',
+                         desc,fila,pagina)
+                fila += 1
+                continue
             if 'aritmetico' == inconsistencia or type(inconsistencia) == int:#esto tiene que ser modificado
                 clas_er = {'bl':[],'per':[],'tot':[]}
                 for erro in errores[pregunta][inconsistencia]:

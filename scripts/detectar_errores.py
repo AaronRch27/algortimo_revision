@@ -347,8 +347,67 @@ def val_delitos(df,context):
             errores['aritmetico']+=ercol['aritmetico']
         if 'aritmetico' not in errores:
             errores['aritmetico'] = ercol['aritmetico']
-        print(errores)
-    #validar desagregado por desagregado(columa por columna)
+        # print(errores)
+    #validar desagregado por desagregado(columa por columna)#####
+    ldelistas_co = {}#diccionario que contiene llaves codigo y contenido de cada llave es una lista con el indice de los codigos desagregados
+    c = 0
+    for codigo in lista:#variable lista definida en proceso anterior que contiene los codigos de la tabla
+        app = []
+        if codigo != lista[-1]:#condicional para no generar errores al llegar al último codigo de la lista
+            d = 1
+            for cod in lista[c+1:]:
+                if codigo in cod:
+                    app.append(c+d)
+                if codigo not in cod:
+                    break
+                d += 1
+        if app:
+            ldelistas_co[codigo] = app #genera llave con lista de indices que le perrtenecen al código
+        c += 1
+    
+    for codigo in ldelistas_co:
+        #por cada llave con desagregados se hará un dataframe para enviarlo a validar por columna
+        ndf = df.iloc[ldelistas_co[codigo]+[ldelistas_co[codigo][0]-1],:]
+        nombres = list(df.columns)
+        borrar = ['Bien jurídico',
+                  'Código',
+                  'Tipo de delito']
+        for bor in borrar:
+            for nombre in nombres:
+                if bor in nombre:
+                    ndf = ndf.drop([nombre],axis=1)
+        ndf = ndf.reset_index(drop=True)#el último valor de ndf es el total del codigo sin desagregados, simulado como si éste fuera una autosuma, para enviarlo a la funcion de validar columnas
+        ercol = totales_columna(ndf)
+        # print(ercol)
+        if ercol:
+            R = []
+            for err in ercol['aritmetico']:#esto para agregar el codigo donde se encontró el error
+                R.append(codigo+':'+err)
+            if 'aritmetico' in errores:
+                errores['aritmetico']+=R
+            if 'aritmetico' not in errores:
+                errores['aritmetico'] = R    
+        ##revisar el tema del 25% de los delitos registrados en otro tipo
+        detc = []
+        for col in ndf:
+            lista = list(ndf[col])
+            to = lista[-1]
+            com = lista[-3]#este siempre es el indicedel valor otros delitos
+            if type(to) == str or type(com) == str:
+                div = 0
+            else:
+                try:#por division entre cero
+                    div = com/to
+                except:
+                    div = 0
+            if div >= 0.25:
+                detc.append(codigo+' : ' +col)
+        if detc:
+            if 'numerales y columnas  donde otros delitos son mayores a 25%' in errores:
+                errores['numerales y columnas  donde otros delitos son mayores a 25%']+=detc
+            if 'numerales y columnas  donde otros delitos son mayores a 25%' not in errores:
+                errores['numerales y columnas  donde otros delitos son mayores a 25%'] = detc
+    # print(errores)
     return errores
 
 def exam_aritme(df,context):
@@ -1667,6 +1726,9 @@ def evaluador_suma(lista,indi):
         if total == 0:
             if ns == 'Si':
                 errores.append(f'{indi} Si el total es cero, valores de desagregados no pueden ser NS o mayores a cero')
+                return errores
+            if suma > 0:
+                errores.append(f'{indi} Si el total es cero, valores de desagregados no pueden ser mayores a cero')
                 return errores
         if total in convertir and suma > 0:
             errores.append(f'Error: Suma de desagregados no puede ser mayor a cero si total es NS o NA en {indi}')
