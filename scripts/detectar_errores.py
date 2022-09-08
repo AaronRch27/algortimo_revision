@@ -5,6 +5,7 @@ Created on Fri Jun 17 14:27:15 2022
 @author: AARON.RAMIREZ
 """
 from FO import generar_formato
+import pandas as pd
 
 def errores(cuestionario,nombre):
     """
@@ -323,7 +324,7 @@ def val_delitos(df,context):
     #validar columna por columna##############
     
     co_des = [] #codigos de desagregados, esos hay que sacarlos antes de enviar a la funcion
-    lista = list(context.tablas[1]['Código']) #Toda tabla de delitos tiene columna llamada así
+    lista = list(context.tablas[0]['Código']) #Toda tabla de delitos tiene columna llamada así
     c = 0
     for cod in lista:
         if len(cod) > 5:
@@ -408,6 +409,68 @@ def val_delitos(df,context):
             if 'numerales y columnas  donde otros delitos son mayores a 25%' not in errores:
                 errores['numerales y columnas  donde otros delitos son mayores a 25%'] = detc
     # print(errores)
+    #como último paso, corroborar si es una tabla de tipo de víctimas, para hacer comprobación de escritura de valores en donde no deben ir
+    nombres = ['Hombres',
+     'Mujeres',
+     'No identificada',
+     'Sector público',
+     'Sector privado',
+     'No identificada',
+     'Sociedad',
+     'Estado',
+     'Otro',
+     'No identificada']
+    n_tabl = list(df.columns)
+    contador = 0
+    for nombre in nombres:
+        for tn in n_tabl:
+            if nombre in tn: #doble iteración para tener mayor precisión al comparar
+                contador += 1
+                break
+    if contador > 5:#es porque se trata de la tabla buscada
+        referente = pd.read_csv('tipo_victima.csv')
+        nfr = context.tablas[0].copy()
+        nfr_n = list(nfr.columns)
+        borr = ['Bien jurídico', 'Tipo de delito', 'Total']
+        for bo in borr:#para borrar esos nombres de la lista y posteriormente usarla para filtrar el dataframe
+            for val in nfr_n:
+                if bo in val:
+                    nfr_n.remove(bo)
+        nfr = nfr[nfr_n]
+        nlre = list(referente.columns)
+        er_col = {}
+        c = 1
+        for col in list(nfr.columns)[1:]:
+            fila = 0
+            er_nc = []
+            for val in nfr[col]:
+                if fila == 164:
+                    break
+                if referente[nlre[c]][fila] == 1:
+                    if type(val) == int:
+                        if val < 0:
+                          
+                            er_nc.append(referente['codigo'][fila])
+                    if type(val) == str:
+                        if val != 'NS':
+                            
+                            er_nc.append(referente['codigo'][fila])
+                if referente[nlre[c]][fila] == 0:
+                    if type(val) == int:
+                        if val > 0:
+                            
+                            er_nc.append(referente['codigo'][fila])
+                    if type(val) ==str:
+                        if val !='0': #aquí se agregaría el NA si aplica
+                            
+                            er_nc.append(referente['codigo'][fila])
+                fila += 1
+            if er_nc:
+                er_col[col] = er_nc
+            c += 1
+        if er_col:
+            errores['registro'] = er_col
+        
     return errores
 
 def exam_aritme(df,context):
