@@ -1323,8 +1323,11 @@ def sinonosabe(df,autosuma):
         bor = df.shape
         df = df.drop([bor[0]-1],axis=0)
     separar = []
+    no_aplica = []
     c = 0
     for columna in df:
+        if 'No aplica' in str(columna):
+            no_aplica.append(c)
         texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
         comparar = '1.Sí/2.'
         if comparar in texto:
@@ -1333,6 +1336,8 @@ def sinonosabe(df,autosuma):
     if not separar:#porque no se detectó columna que tenga lo que a esta validacion importa
         return
     
+    if no_aplica:
+        no_a = list(df.iloc[:,no_aplica[0]]) #es la columna de no aplica
     c = 0
     for sep in separar:
         try:
@@ -1361,10 +1366,17 @@ def sinonosabe(df,autosuma):
                             errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
                 if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
                     # print(indices[c1],'11111111111')
-                    if 'catalogo' in errores:
-                        errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
-                    if 'catalogo' not in errores:
-                        errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                    if no_aplica:
+                        if no_a[c1] != 'X':
+                            if 'catalogo' in errores:
+                                errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
+                            if 'catalogo' not in errores:
+                                errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                    if not no_aplica:
+                        if 'catalogo' in errores:
+                            errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
+                        if 'catalogo' not in errores:
+                            errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
                 if fila[0] == 1:
                     if fila[1:]:#porque si la fila esta vacia no es un error ya que es la ultima columna y no hay nada con que corroborar
                         if sum(fila[1:]) == 0:
@@ -1484,7 +1496,41 @@ def totales_fila(df,autosuma):
                 
         bor = df.shape
         df = df.drop([bor[0]-1],axis=0)
+    total = []
+    c = 0
+    for colum in df:
+        if 'Total' in str(colum):
+            total.append(c)
+        c += 1
         
+    if len(total)>1:
+        c = 0
+        for to in total:
+            try:
+                ndf = df.iloc[:,to:total[c+1]]
+            except:
+                ndf = df.iloc[:,to:]
+            aritmetic = vts(ndf)
+            if aritmetic:
+                
+                if 'aritmetico' in errores:
+                    errores['aritmetico']+=aritmetic['aritmetico']
+                if 'aritmetico' not in errores:
+                    errores['aritmetico'] = aritmetic['aritmetico']
+    else:
+        aritmetic = vts(df)
+        if aritmetic:
+            
+            if 'aritmetico' in errores:
+                errores['aritmetico']+=aritmetic['aritmetico']
+            if 'aritmetico' not in errores:
+                errores['aritmetico'] = aritmetic['aritmetico']
+               
+    return errores
+    
+def vts(df):
+    "esta funcion se desprendio de totales_fila derivado de la necesidad de iterar el dataframe en el caso de que hubiesen varios totales dentro de la tabla"
+    errores = {}      
     total = []
     subtotal = []
     c = 0
@@ -1495,6 +1541,7 @@ def totales_fila(df,autosuma):
             subtotal.append(c)
         c += 1
     # print(total,subtotal,df.shape)
+            
     
     if total and not subtotal:
         c = 0
