@@ -324,7 +324,9 @@ def val_delitos(df,context):
     #validar columna por columna##############
     
     co_des = [] #codigos de desagregados, esos hay que sacarlos antes de enviar a la funcion
-    lista = list(context.tablas[0]['Código']) #Toda tabla de delitos tiene columna llamada así
+    for k in context.tablas: #solo paradar el valor a k, que es cero o uno dependiendo las tablas que tenga, interesa la primera tabla unicamente para linea siguiente
+        break
+    lista = list(context.tablas[k]['Código']) #Toda tabla de delitos tiene columna llamada así
     c = 0
     for cod in lista:
         if len(cod) > 5:
@@ -493,6 +495,7 @@ def exam_aritme(df,context):
         vale No.
 
     """
+    # print(df.shape,'exa in')
     es = 'No'
     ddf = 0 #valores predefinidos para ambas variables. Con ello al retornar así, no se hará validacion aritmética
     columnas = list(df.columns)
@@ -504,7 +507,14 @@ def exam_aritme(df,context):
     except:
         return es, df #no le hace nada al df
     #en caso de que sí hay encabezado, revisar porque hay tablas que no se puede validar el total con todas las columnas, ya que meten otras al final que no son parte de la suma
-
+    cole = []#lista con los primeros valores por columna de encabezados de tabla
+    for col in enc:
+        for fil in reversed(list(enc[col])):
+            if fil != 'borra':
+                cole.append(fil)
+                break
+           
+    conteo_rep = dict(zip(cole,map(lambda x: cole.count(x),cole)))#diccionario con conteo de los nombres repetidos
     valores_col = []
     for col in enc:
         lista = list(enc[col])
@@ -517,17 +527,37 @@ def exam_aritme(df,context):
                 v_col1 = v_col
             v_col += 1
         valores_col.append(v_col1)
+    # print('####',valores_col)
     #el primer valor de valores_col será el del index de la tabla
     c = 1
     ddf = df.copy()
-    # print('aqui',len(columnas),len(valores_col))
+    # print('aqui',len(columnas),len(cole))
     for ref in valores_col[1:]:
         if ref == 0:
             continue#son columnas vacias, eesas deben ser ignorads
-        if ref == valores_col[0]:
-            
-            ddf = ddf.drop([columnas[c]],axis=1)
+        if ref == 1:
+
+            if conteo_rep[cole[c]] == 1:#esta confirmación es para evitar borrar columnas de tablas por partes que son unidas, donde se repite el nombre del índice   
+                try:    
+                    ddf = ddf.drop([cole[c]],axis=1)
+                except:#porque aveces hay columnas de sinonosabe que ya se removieron
+                    pass
+            if conteo_rep[cole[c]] > 1:#borrar duplicados de index que no deberían estar por error de lectura de tabla
+                
+                if cole[c] in columnas:
+                    f = '1'#este uno es porque al transformar la tabla, a columnas repetidas se les va agregando el uno para que no se sobrescriban pudiendo quedar por ejemplo "Subtotal111"
+                    lf = []
+                    for v in range(6):
+                        lf.append(f)
+                        f += '1'
+                    ch = [str(cole[c])+x for x in lf]
+                    borr = [x for x in columnas if x in ch]
+                    for val in borr:
+                        ddf = ddf.drop([val],axis=1)
+                        
+                    
         c += 1
+    # print(ddf.shape,'exaout')
     return es , ddf
 
 def tabla_vacia(df):
@@ -1451,7 +1481,7 @@ def sinonosabe(df,autosuma):
                 if fila[0] > 1:
                     if fila[1:]:
                         if 'catalogo' in errores:
-                            errores['catalogo'].appenf(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
+                            errores['catalogo'].append(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
                         if 'catalogo' not in errores:
                             errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
                 if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
@@ -1539,6 +1569,7 @@ def totales_columna(df1):
 
 def totales_fila(df,autosuma):
     "leer dataframe de tablas normales, regresar error"
+    # print(df.shape,'totales_fila in')
     errores = {}
     #eliminar autosumas si las hay, y también validar columnas, aunque ten teoría aquí no deberia haber errores por las fórmulas de autosuma:
     if autosuma == 'Si':
@@ -1565,7 +1596,6 @@ def totales_fila(df,autosuma):
         if 'Total' in str(colum):
             total.append(c)
         c += 1
-        
     if len(total)>1:
         c = 0
         for to in total:
@@ -1593,6 +1623,7 @@ def totales_fila(df,autosuma):
     
 def vts(df):
     "esta funcion se desprendio de totales_fila derivado de la necesidad de iterar el dataframe en el caso de que hubiesen varios totales dentro de la tabla"
+    # print(df.shape,'vts in')
     errores = {}      
     total = []
     subtotal = []
@@ -1607,6 +1638,7 @@ def vts(df):
             
     
     if total and not subtotal:
+        
         c = 0
         for tot in total:
             c1 = 0
@@ -1617,6 +1649,8 @@ def vts(df):
                     lista = list(df.iloc[c1, tot:total[c+1]])
                 except:
                     lista = list(df.iloc[c1, tot:])
+                # if c1 < 3:
+                #     print(len(lista))
                 aritmetic = evaluador_suma(lista,f'fila{c1+1}')
                 if aritmetic:
                     if 'aritmetico' in errores:
