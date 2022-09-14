@@ -542,8 +542,21 @@ class clase_pregunta():
             nuevo_df = nuevo_df.fillna('borra')
             self.encabezado_tabla = nuevo_df.iloc[:-1,:]
             nombres = []
+            fila_resp = list(nuevo_df.iloc[-1,:])
+            vacia = True #comprobador de si la tabla está vacia
+            for vl in fila_resp:
+                if type(vl) == str:
+                    comp = ['NS','NA','X']
+                    vv = vl.upper()
+                    if vv in comp:
+                        vacia = False
+                if type(vl) == int or type(vl) == float:
+                    vacia = False
             for col in nuevo_df:
                 ap = list(nuevo_df[col])
+                
+                if len(ap) == 1:#para tablas vacias
+                    ap.append('borra')
                 nombres = ap[:-1]
                 if 'borra' in nombres:
                     veces = nombres.count('borra')
@@ -551,7 +564,8 @@ class clase_pregunta():
                         nombres.remove('borra')
                 if nombres:
                     nombre = str(nombres[-1])
-
+                if not nombres:
+                    nombre = ap[0]
                 if nombre in val:
                     while True:
                         if nombre in val:
@@ -567,7 +581,10 @@ class clase_pregunta():
                 #         ind += 1
                 #     val[nombre] = nl
                 if nombre not in val:
-                    val[nombre] = [ap[-1]]
+                    if not vacia:
+                        val[nombre] = [ap[-1]]
+                    if vacia:
+                        val[nombre] = ['borra']
             if 'Código1' in val:
                 val.pop('Código1') #borrar porque esta columna es un error
             nuevo_df = pd.DataFrame(val)    
@@ -697,7 +714,7 @@ class clase_pregunta():
             n += 100
         # print(espacios,colyfil['fila'],aver,partes)
         #eliminar columnas de index
-        index = ['1.', '1. ', '01.', '01. ']
+        index = ['1.', '1. ', '01.', '01. ','Código']
         borrar = []
         # print(nuevas_columnas)
         for k in nuevas_columnas:
@@ -712,6 +729,8 @@ class clase_pregunta():
                         borrar.append(k+1)
                     break
                 c += 1
+            if borrar:
+                break
         for br in borrar:
             if br  in nuevas_columnas:
                 del nuevas_columnas[br]

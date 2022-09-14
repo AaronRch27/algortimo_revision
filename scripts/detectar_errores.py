@@ -103,7 +103,7 @@ def iterar_cuestionario(cuestionario):
                         if aritmeticos:
                             errores[pregunta] = aritmeticos
                     if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
-                        aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta])
+                        aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
                         if aritmeticos:
                             errores[pregunta] = aritmeticos
             #validación para todas las preguntas de si no no se sabe.
@@ -147,7 +147,7 @@ def iterar_cuestionario(cuestionario):
             
     return errores, censo
 
-def val_delitos(df,context):
+def val_delitos(df,context,ntabla):
     """
     
 
@@ -158,6 +158,7 @@ def val_delitos(df,context):
         no deba ser validado con el total
     context : objeto pregunta para tener en cuenta el
         contexto de la tabla
+    ntabla: index de la tabla para buscarla en el context
 
     Returns
     -------
@@ -273,6 +274,7 @@ def val_delitos(df,context):
                     c += 1
                 c2 += 1
             #en el ciclo for que conluye, se revisan únicamente los desagregados del total
+        
         # a continuación se revisa el total con sus subtotales
         c = 0
         for fila in list(df.iloc[:,0]):
@@ -390,6 +392,7 @@ def val_delitos(df,context):
                 errores['aritmetico']+=R
             if 'aritmetico' not in errores:
                 errores['aritmetico'] = R    
+        
         ##revisar el tema del 25% de los delitos registrados en otro tipo
         detc = []
         for col in ndf:
@@ -431,7 +434,7 @@ def val_delitos(df,context):
                 break
     if contador > 5:#es porque se trata de la tabla buscada
         referente = pd.read_csv('tipo_victima.csv')
-        nfr = context.tablas[0].copy()
+        nfr = context.tablas[ntabla].copy()
         nfr_n = list(nfr.columns)
         borr = ['Bien jurídico', 'Tipo de delito', 'Total']
         for bo in borr:#para borrar esos nombres de la lista y posteriormente usarla para filtrar el dataframe
@@ -543,7 +546,7 @@ def exam_aritme(df,context):
                 except:#porque aveces hay columnas de sinonosabe que ya se removieron
                     pass
             if conteo_rep[cole[c]] > 1:#borrar duplicados de index que no deberían estar por error de lectura de tabla
-                
+                columnas = list(ddf.columns)
                 if cole[c] in columnas:
                     f = '1'#este uno es porque al transformar la tabla, a columnas repetidas se les va agregando el uno para que no se sobrescriban pudiendo quedar por ejemplo "Subtotal111"
                     lf = []
@@ -562,10 +565,13 @@ def exam_aritme(df,context):
 
 def tabla_vacia(df):
     med = df.shape
+    cols = list(df.columns)
     if med[0]>1000:
         cortado = df.iloc[:-1,1:]
     if med[0]<1000:
         cortado = df.iloc[:,1:]
+    if 'Tipo de delito' in cols:
+        cortado = df.iloc[:-1,3:]
     vacios = cortado.isin(['borra','borra borra'])
     falsos = vacios.isin([False]).any().any()
     if falsos:
