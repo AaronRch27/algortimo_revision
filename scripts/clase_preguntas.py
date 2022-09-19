@@ -249,7 +249,13 @@ class clase_pregunta():
             self.tipo_T = 'Tabla'
             #comoprobar si es tabla de delitos
             columns = list(nuevo_df.columns)
-            if 'Tipo de delito' in columns and 'Código' in columns:
+            nc = []
+
+            saca = [' ','\n']
+            for val in columns:
+                nc.append(''.join(v for v in str(val) if v not in saca))#quitar espacios
+                
+            if 'Tipodedelito' in nc and 'Código' in nc:
                 self.tipo_T = 'Tabla_delitos'
         else: #para los que no son tablas
             nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor,self)
@@ -697,8 +703,8 @@ class clase_pregunta():
         n = 1000
         for tabla in range(1,can):
             filaS = colyfil['fila'][espacios[tabla]]+2 #la fila donde empieza la tabla
-            filaSF = colyfil['fila'][espacios[1]+1]
-            # print(filaS,filaSF, filaS+filaSF)
+            filaSF = colyfil['fila'][espacios[1]+1]#por precision hay que restar con la distancia que tiene el inicio del numeral al inicio del frame
+            # print(filaS,filaSF, filaS+filaSF,len(filas_inicio))
             c = 0
             for columna in df:
                 ap = list(df[columna])

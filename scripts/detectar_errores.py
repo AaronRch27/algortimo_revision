@@ -129,8 +129,8 @@ def iterar_cuestionario(cuestionario):
             #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
             # except:
             #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-            # # #modo localizar errores:
-            # # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+            #modo localizar errores:
+            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
             # if consist:
                 
             #     if pregunta in errores:
@@ -440,7 +440,7 @@ def val_delitos(df,context,ntabla):
         for bo in borr:#para borrar esos nombres de la lista y posteriormente usarla para filtrar el dataframe
             for val in nfr_n:
                 if bo in val:
-                    nfr_n.remove(bo)
+                    nfr_n.remove(val)
         nfr = nfr[nfr_n]
         nlre = list(referente.columns)
         er_col = {}
@@ -1712,26 +1712,35 @@ def vts(df):
 
             c2 = 1 #tiene que iniciar desde 1 porque no deseamos almacenar el valor del subtotal sino del que sigue
             for des in desa:
-
+                CN = list(df.columns)
+                DE = CN[des]
+                IC =[]
+                c1 = 0
+                for nombr in CN:
+                    if DE in nombr:
+                        IC.append(c1)
+                    c1 += 1
+                # print(IC)
                 c = 0
                 for fila in list(df.iloc[:,0]):#primero se itera por fila del df
                     lista_fila = list(df.iloc[c,:])#se saca la lista de los valores de la fila
-                    lista = [lista_fila[des]] #esta es la lista que eventualmente pasará a ser evaluda. Inicia con el total del desagregado y se complementa con los desagregados de cada subtotal
-                    c1 = 0
-                    for sub in subtotal:
-                        if sub > des: #para no trabajar con subtotales de otro total
-                            if comp[c1] == ref:
-                                agregar =  lista_fila[sub+c2]
-                                lista.append(agregar)
-                            if comp[c1] > ref:
-                                div = comp[c1]//ref
-                                for i in range(div):
-                                    aumento = ref*i
-                                    agregar = lista_fila[sub+c2+aumento]
-                                    lista.append(agregar)
+                    # lista = [lista_fila[des]] #esta es la lista que eventualmente pasará a ser evaluda. Inicia con el total del desagregado y se complementa con los desagregados de cada subtotal
+                    # c1 = 0
+                    # for sub in subtotal:
+                    #     if sub > des: #para no trabajar con subtotales de otro total
+                    #         if comp[c1] == ref:
+                    #             agregar =  lista_fila[sub+c2]
+                    #             lista.append(agregar)
+                    #         if comp[c1] > ref:
+                    #             div = comp[c1]//ref
+                    #             for i in range(div):
+                    #                 aumento = ref*i
+                    #                 agregar = lista_fila[sub+c2+aumento]
+                    #                 lista.append(agregar)
                             
-                        c1 += 1
-                    
+                    #     c1 += 1
+                    lista = [lista_fila[i] for i in IC]
+                    # print(lista)
                     aritmetic = evaluador_suma(lista,f'fila{c+1}')
                     
                     if aritmetic:
