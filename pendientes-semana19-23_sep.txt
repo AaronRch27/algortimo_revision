@@ -1,0 +1,45 @@
+Validar censo de gobierno federal y organizarlo. Ver cargas de trabajo para 
+distribuciónd e actividad.
+
+Monse hará manuales operativos y dividirá. El jueves enviará propuesta de fechas.
+
+Escribir a armando por teams si no han llegado los cuestionarios mañana.
+
+Victor igual tiene modulos de derechos humanos para considerarlo
+
+Estar atentos a los cuestionarios de seguridad publica federal, poco probable.
+
+Generar graficas y resultados a partir de base de datos que tiene. 24 preguntas.
+Categorizar tipos de respuesta en prgeuntas abiertas. César y Monse
+
+Víctor y yo--Prellenados en estatales
+Hacer resumen y luego categorización de tipo de respuesta en respuesta abierta.
+Luego tabla de conteo de categorías.
+Pero también integrar las respuestas del cuestionario en una base. Tienen una hoja oculta
+son 26 archivos
+
+
+10 días de vacaciones antes de 30 noviembre 
+
+
+Botón de retorno
+
+contador/comparador de avance en censos por equipo--- y solo por equipo
+
+Proytecto--> Programa
+
+Extraer info de observaciones-- códigos A1B etc-- pantalla especial a 
+partir de seleccionar Todos. donde muestre esta parte. No todos lo tienen.
+
+Días en promedio para liberar cuestionario por usuario -- hacer una especie de ficha. 
+Promedio de días en revisión.
+Promedio de revisiones para liberar.
+
+nueva columna de dias de retraso los que no con cero.
+
+insertar esta frase:
+	Para fines internos exclusivamente (personal operativo)
+
+
+
+
