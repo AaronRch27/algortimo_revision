@@ -34,8 +34,8 @@ class aplicacion(tk.Frame):
             base[k] = ['P' for p in range(len(r))]
         base['preguntas'] = r
         df = pd.DataFrame(base)
-        df.to_csv('veamos.csv')
-        print(r,list(df['preguntas']))
+        # df.to_csv('veamos.csv')
+        # print(r,list(df['preguntas']))
         #al hacer el save queda mal la columna de preguntas porque no es string, puede solucionarse agregando algo y borrandolo al leerlo
         return r, base
         
@@ -44,14 +44,14 @@ class aplicacion(tk.Frame):
         for val in br:
             val.destroy()
         #variables control
-        self.blanco = IntVar() #bool cero o uno
-        self.arit = IntVar() #bool cero o uno
-        self.sum_n = IntVar() #bool cero o uno
-        self.espec = IntVar() #bool cero o uno será? el algoritmo ya detecta esto...
-        self.registro = IntVar() #bool cero o uno. donde hay columnas que no se responden con numeros, como ids y eso
-        self.salto = IntVar() #bool cero o uno
-        self.p_rel1 = IntVar() #bool cero o uno
-        self.p_relcol = StringVar() #bool cero o uno
+        self.blanco = IntVar(self) #bool cero o uno
+        self.arit = IntVar(self) #bool cero o uno
+        self.sum_n = IntVar(self) #bool cero o uno
+        self.espec = IntVar(self) #bool cero o uno será? el algoritmo ya detecta esto...
+        self.registro = IntVar(self) #bool cero o uno. donde hay columnas que no se responden con numeros, como ids y eso
+        self.salto = IntVar(self) #bool cero o uno
+        self.p_rel1 = IntVar(self) #bool cero o uno
+        self.p_relcol = StringVar(self) #bool cero o uno
         
         l1 = tk.Label(self, text=f"Selecciona las validaciones que aplican para pregunta {pregunta}")
         l1.pack()
@@ -120,7 +120,16 @@ class aplicacion(tk.Frame):
         
     def nex(self):
         #almacenar validaciones en base
-        
+        copia = self.base.copy()
+        copia['blanco'][self.cont] = self.blanco.get()
+        copia['aritmetico'][self.cont] = self.arit.get()
+        copia['suma_numeral'][self.cont] = self.sum_n.get()
+        copia['espeficique'][self.cont] = self.espec.get()
+        copia['errores_registro'][self.cont] = self.registro.get()
+        copia['salto_preguntas'][self.cont] = self.salto.get()
+        copia['preguntas_relacionadas'][self.cont] = self.p_rel1.get()
+        self.base=pd.DataFrame(copia)
+        self.base.to_csv('veamos.csv')
         #cambiar pregunta
         self.cont += 1
         if self.cont > len(self.lista)-1:
