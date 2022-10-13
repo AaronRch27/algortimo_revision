@@ -28,7 +28,8 @@ class aplicacion(tk.Frame):
         "c es cuesitonario"
         r = []
         for seccion in c:
-            ll = [str(i) for i in list(c[seccion])]
+            ## se agrega .- a las preguntas para la base, no olvidar quitarlo cuando se use para buscar en  cuestionario!!!!
+            ll = [str(i)+'.-' for i in list(c[seccion])]
             r += ll
         for k in base:
             base[k] = ['P' for p in range(len(r))]
@@ -38,7 +39,18 @@ class aplicacion(tk.Frame):
         # print(r,list(df['preguntas']))
         #al hacer el save queda mal la columna de preguntas porque no es string, puede solucionarse agregando algo y borrandolo al leerlo
         return r, base
-        
+    
+    @staticmethod    
+    def bp(self,pregunta):
+        cues = self.cues
+        objeto = 0
+        for seccion in cues:
+            #pregunta con slice de menos dos para quotar el punto y guion agregados para la base
+            if pregunta[:-2] in cues[seccion]:
+                objeto = cues[seccion][pregunta[:-2]]
+                break
+        return objeto
+    
     def rec(self,pregunta):
         br = self.pack_slaves()#limpiar interfaz
         for val in br:
@@ -52,7 +64,40 @@ class aplicacion(tk.Frame):
         self.salto = IntVar(self) #bool cero o uno
         self.p_rel1 = IntVar(self) #bool cero o uno
         self.p_relcol = StringVar(self) #bool cero o uno
+        #despliegue de ventanas con instrucciones y tablas de pregunta
+        ob_pre = self.bp(self,pregunta) #objeto pregunta
+        self.NV = tk.Toplevel(self)
+        self.NV.title('Pregunta e instrucciones')
+        self.NV.geometry('800x500')
+        can = tk.Canvas(self.NV, width=800, height = 500,
+                        scrollregion=(0,0,800,500))
+        can.pack()
+        barra = tk.Scrollbar(can)
+        barra.pack(side=tk.RIGHT, fill=tk.Y)
         
+        # can.config(yscrollcommand = barra.set)
+        ll1 = tk.Label(can, text='Pregunta: '+ob_pre.pregunta,wraplength=450)
+        ll1.pack()
+        instrucciones = tk.Listbox(can, yscrollcommand = barra.set,
+                                   selectmode=tk.EXTENDED)
+        for instruccion in ob_pre.instrucciones:
+            instrucciones.insert(tk.END,instruccion)
+            # ll2 = tk.Label(can, text=instruccion,wraplength=650)
+            # ll2.pack()
+        instrucciones.pack(fill = tk.BOTH, expand=True)
+        barra.config(command=instrucciones.yview)
+        if type(ob_pre.tablas) != str: #hay preguntas que no son tablas y se pasa una string aquí en vez del frame
+            for tabla in ob_pre.tablas:
+                self.NV1 = tk.Toplevel(self)
+                self.NV1.title('Contenido de pregunta')
+                barra = tk.Scrollbar(self.NV1,orient='horizontal')
+                barra.pack(side=tk.BOTTOM, fill=tk.X)
+                tab = tk.Text(self.NV1,xscrollcommand=barra.set,wrap=tk.NONE)#,width=100
+                tab.insert(tk.INSERT, ob_pre.tablas[tabla].to_string())
+                barra.config(command=tab.xview)
+                tab.pack()
+                
+        #encabezado de ventana con tipos de validacion
         l1 = tk.Label(self, text=f"Selecciona las validaciones que aplican para pregunta {pregunta}")
         l1.pack()
         #apartado de validacion checkbox
@@ -119,6 +164,9 @@ class aplicacion(tk.Frame):
             )
         
     def nex(self):
+        #cerrar ventanas de instrucciones y tablas
+        self.NV.destroy()
+        self.NV1.destroy()
         #almacenar validaciones en base
         copia = self.base.copy()
         copia['blanco'][self.cont] = self.blanco.get()
@@ -137,6 +185,10 @@ class aplicacion(tk.Frame):
         self.rec(self.lista[self.cont])
     
     def prev(self):
+        #cerrar ventanas de instrucciones y tablas
+        self.NV.destroy()
+        self.NV1.destroy()
+        #actualizar el contador
         self.cont -= 1
         self.rec(self.lista[self.cont])
         

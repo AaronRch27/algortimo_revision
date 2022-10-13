@@ -7,7 +7,7 @@ Created on Wed Apr 27 14:29:53 2022
 import pandas as pd
 import numpy as np
 import joblib
-
+import traceback
 #Los modelos se deben cargar desde el main
 # modelo1 = joblib.load('modelo_primer_filtro.sav')
 
@@ -325,7 +325,12 @@ class clase_pregunta():
     @staticmethod
     def transformar_notab(df,mayor,self):
         previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        especifique = clase_pregunta.buscarpalabra('especifique', df) 
         # ndf = df.iloc[:previo_comentario[0][0],:]
+        
+        if especifique:
+            previo_comentario = [especifique[-1]]+previo_comentario
+        
         colyfil = clase_pregunta.imagen(df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         c_espacios = espacios + [] #crear una copia para modificarla
@@ -334,16 +339,24 @@ class clase_pregunta():
         for espacio in espacios:#sacar los espacios que no sirven, aunque 
             if espacio > previo_comentario[0][0]:
                 c_espacios.remove(espacio)
-        inf =  [i for i in range(0,colyfil['fila'][espacios[0]]+2)]
-        sup = [i for i in range(colyfil['fila'][espacios[-1]]+1,len(df['Unnamed: 2'].values))]
+          
+        inf =  [i for i in range(0,colyfil['fila'][c_espacios[0]]+2)]
+        sup = [i for i in range(colyfil['fila'][c_espacios[-1]]+1,len(df['Unnamed: 2'].values))]
         nuevo_df = df.drop(inf+sup, axis=0)
         nuevo_df = clase_pregunta.borrar_col(nuevo_df)
         forma = nuevo_df.shape
-        #porque se pasa el frame en preguntas donde hay glosarios de nuevas subsecciones
-        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', nuevo_df)
-        if previo_comentario:
-            nuevo_df = nuevo_df.iloc[:previo_comentario[0][0],:]
-
+        #porque se pasa el frame en preguntas donde hay glosarios de nuevas subsecciones o apartados de especifique
+        
+        # previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', nuevo_df)
+        # if previo_comentario:
+        #     nuevo_df = nuevo_df.iloc[:previo_comentario[0][0],:]
+        # especifique = clase_pregunta.buscarpalabra('especifique', nuevo_df)    
+        # print(especifique,previo_comentario,nuevo_df)
+        # if especifique:
+        #     especifique = [especifique[-1]]
+        #     print('si',especifique, nuevo_df.shape)
+        #     nuevo_df = nuevo_df.iloc[:especifique[0][0]-1,:]
+        #     print(nuevo_df)
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
         self.tipo_T = 'No Tabla'
@@ -832,14 +845,17 @@ class clase_pregunta():
             vo = 0
             try:
                 for elm in lista:
-                    if palabra in elm:
-                        sad = (cont,vo)
-                        entot.append(sad)
-                    else:
-                        pass
-                    vo+=1
+                    if type(elm) == str:
+                        x = elm.rstrip('\n')
+                        if palabra in x:
+                            sad = (cont,vo)
+                            entot.append(sad)
+                        else:
+                            pass
+                        vo+=1
                 cont+=1
             except:
+                traceback.print_exc()
                 pass
         return entot
   
