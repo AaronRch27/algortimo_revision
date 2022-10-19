@@ -7,7 +7,7 @@ Created on Wed Apr 27 14:29:53 2022
 import pandas as pd
 import numpy as np
 import joblib
-
+import traceback
 #Los modelos se deben cargar desde el main
 # modelo1 = joblib.load('modelo_primer_filtro.sav')
 
@@ -223,6 +223,7 @@ class clase_pregunta():
             self.autosuma
         except:#esta excepcion es porque aveces no se genera el atributo autosuma en borrarS
             self.autosuma = 'No'
+        self.encabezado_tabla = []
         medidas = df.shape
         # print(medidas)
         if medidas[0] < 25: #identificar preguntas si no no se sabe tomando en cuenta que suelen ser pequeñas en cantidad de filas <10
@@ -246,9 +247,19 @@ class clase_pregunta():
         if mayor > 15: #Se trata de una tabla
             nuevo_df = clase_pregunta.transformar_tabla(nuevo_df,self)
             self.tipo_T = 'Tabla'
+            #comoprobar si es tabla de delitos
+            columns = list(nuevo_df.columns)
+            nc = []
+
+            saca = [' ','\n']
+            for val in columns:
+                nc.append(''.join(v for v in str(val) if v not in saca))#quitar espacios
+                
+            if 'Tipodedelito' in nc and 'Código' in nc:
+                self.tipo_T = 'Tabla_delitos'
         else: #para los que no son tablas
             nuevo_df = clase_pregunta.transformar_notab(nuevo_df,mayor,self)
-            
+                
         return nuevo_df
    
     @staticmethod
@@ -313,21 +324,39 @@ class clase_pregunta():
         
     @staticmethod
     def transformar_notab(df,mayor,self):
+        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        especifique = clase_pregunta.buscarpalabra('especifique', df) 
+        # ndf = df.iloc[:previo_comentario[0][0],:]
+        
+        if especifique:
+            previo_comentario = [especifique[-1]]+previo_comentario
         
         colyfil = clase_pregunta.imagen(df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1)
         c_espacios = espacios + [] #crear una copia para modificarla
-        previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', df)#fila previa al comentario de la pregunta si es que lo tiene o no, más bien es el lugar donde va el comentario
+        # print(ndf,espacios,previo_comentario)
         # print(espacios,df)
         for espacio in espacios:#sacar los espacios que no sirven, aunque 
             if espacio > previo_comentario[0][0]:
                 c_espacios.remove(espacio)
-        inf =  [i for i in range(0,colyfil['fila'][espacios[0]]+2)]
-        sup = [i for i in range(colyfil['fila'][espacios[-1]]+1,len(df['Unnamed: 2'].values))]
-        nuevo_df = df.drop(inf + sup, axis=0)
+          
+        inf =  [i for i in range(0,colyfil['fila'][c_espacios[0]]+2)]
+        sup = [i for i in range(colyfil['fila'][c_espacios[-1]]+1,len(df['Unnamed: 2'].values))]
+        nuevo_df = df.drop(inf+sup, axis=0)
         nuevo_df = clase_pregunta.borrar_col(nuevo_df)
         forma = nuevo_df.shape
+        #porque se pasa el frame en preguntas donde hay glosarios de nuevas subsecciones o apartados de especifique
         
+        # previo_comentario = clase_pregunta.buscarpalabra('En caso de tener algún comentario', nuevo_df)
+        # if previo_comentario:
+        #     nuevo_df = nuevo_df.iloc[:previo_comentario[0][0],:]
+        # especifique = clase_pregunta.buscarpalabra('especifique', nuevo_df)    
+        # print(especifique,previo_comentario,nuevo_df)
+        # if especifique:
+        #     especifique = [especifique[-1]]
+        #     print('si',especifique, nuevo_df.shape)
+        #     nuevo_df = nuevo_df.iloc[:especifique[0][0]-1,:]
+        #     print(nuevo_df)
         # desde la linea anterior hasta el inicio de esta función, lo que se hace es un recorte de la pregunta, dejando fuera la parte de los comentarios, instrucciones, y numero de pregunta, con tal de quedarse con solo los datos que ella contiene
         #Para comenzar con la reestructuración de la prgeunta, un conteo de niveles de desagregados
         self.tipo_T = 'No Tabla'
@@ -433,6 +462,17 @@ class clase_pregunta():
     def transformar_tabla(nuevo_df,self):
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
+        medida = nuevo_df.shape
+        if medida[0] > 2000: #para borrar fila de total que está debajo de los encabezados de la tabla, porque eso genera errores de lectura
+            c = 0
+            nuevo_df = nuevo_df.reset_index(drop=True)
+            for fila in list(nuevo_df.iloc[:,2]):#iterar columna C
+                if 'Total' == fila:
+                    nuevo_df = nuevo_df.drop([c])
+                    # print('borró fila ',c)
+                    nuevo_df = nuevo_df.reset_index(drop=True)
+                    break
+                c += 1
         colyfil = clase_pregunta.imagen(nuevo_df)
         espacios = clase_pregunta.distancia(colyfil['fila'],1) #forzozamente debe arrojar al menos dos numeros dentro de la lista
         if not espacios or len(espacios)==1:
@@ -462,7 +502,13 @@ class clase_pregunta():
             if comprobador: #no tiene caso que se siga iterando si ya lo encontró
                 break
             # print(nuevo_df.columns)
-            if uno in list(nuevo_df['Unnamed: 2']): #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
+            Revisar = 0
+            for val11 in list(nuevo_df['Unnamed: 2']):
+                if type(val11) == str:
+                    if val11.startswith(uno):
+                        Revisar = 1
+            # print(Revisar)
+            if uno in list(nuevo_df['Unnamed: 2']) or Revisar == 1: #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
                 self.T_tip = 'index'
                 comprobador.append(1)
                 c = 0
@@ -505,15 +551,31 @@ class clase_pregunta():
                     if nombre not in val:
                         val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
                     cn += 1
+                if 'Código1' in val:
+                    val.pop('Código1') #borrar porque esta columna es un error
                 nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
         if not comprobador: #tabla de filas unicas
             # print('hastaqui bien')
             self.T_tip = 'unifila'
             nuevo_df = nuevo_df.fillna('borra')
+            self.encabezado_tabla = nuevo_df.iloc[:-1,:]
             nombres = []
+            fila_resp = list(nuevo_df.iloc[-1,:])
+            vacia = True #comprobador de si la tabla está vacia
+            for vl in fila_resp:
+                if type(vl) == str:
+                    comp = ['NS','NA','X']
+                    vv = vl.upper()
+                    if vv in comp:
+                        vacia = False
+                if type(vl) == int or type(vl) == float:
+                    vacia = False
             for col in nuevo_df:
                 ap = list(nuevo_df[col])
+                
+                if len(ap) == 1:#para tablas vacias
+                    ap.append('borra')
                 nombres = ap[:-1]
                 if 'borra' in nombres:
                     veces = nombres.count('borra')
@@ -521,7 +583,8 @@ class clase_pregunta():
                         nombres.remove('borra')
                 if nombres:
                     nombre = str(nombres[-1])
-
+                if not nombres:
+                    nombre = ap[0]
                 if nombre in val:
                     while True:
                         if nombre in val:
@@ -537,8 +600,12 @@ class clase_pregunta():
                 #         ind += 1
                 #     val[nombre] = nl
                 if nombre not in val:
-                    val[nombre] = [ap[-1]]
-           
+                    if not vacia:
+                        val[nombre] = [ap[-1]]
+                    if vacia:
+                        val[nombre] = ['borra']
+            if 'Código1' in val:
+                val.pop('Código1') #borrar porque esta columna es un error
             nuevo_df = pd.DataFrame(val)    
         return nuevo_df
     
@@ -649,8 +716,8 @@ class clase_pregunta():
         n = 1000
         for tabla in range(1,can):
             filaS = colyfil['fila'][espacios[tabla]]+2 #la fila donde empieza la tabla
-            filaSF = colyfil['fila'][espacios[1]+1]
-            # print(filaS,filaSF, filaS+filaSF)
+            filaSF = colyfil['fila'][espacios[1]+1]#por precision hay que restar con la distancia que tiene el inicio del numeral al inicio del frame
+            # print(filaS,filaSF, filaS+filaSF,len(filas_inicio))
             c = 0
             for columna in df:
                 ap = list(df[columna])
@@ -666,7 +733,7 @@ class clase_pregunta():
             n += 100
         # print(espacios,colyfil['fila'],aver,partes)
         #eliminar columnas de index
-        index = ['1.', '1. ', '01.', '01. ']
+        index = ['1.', '1. ', '01.', '01. ','Código']
         borrar = []
         # print(nuevas_columnas)
         for k in nuevas_columnas:
@@ -681,6 +748,8 @@ class clase_pregunta():
                         borrar.append(k+1)
                     break
                 c += 1
+            if borrar:
+                break
         for br in borrar:
             if br  in nuevas_columnas:
                 del nuevas_columnas[br]
@@ -776,14 +845,17 @@ class clase_pregunta():
             vo = 0
             try:
                 for elm in lista:
-                    if palabra in elm:
-                        sad = (cont,vo)
-                        entot.append(sad)
-                    else:
-                        pass
-                    vo+=1
+                    if type(elm) == str:
+                        x = elm.rstrip('\n')
+                        if palabra in x:
+                            sad = (cont,vo)
+                            entot.append(sad)
+                        else:
+                            pass
+                        vo+=1
                 cont+=1
             except:
+                traceback.print_exc()
                 pass
         return entot
   

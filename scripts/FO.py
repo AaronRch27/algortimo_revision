@@ -48,9 +48,22 @@ def generar_formato(errores,censo,nombre):
                          desc,fila,pagina)
                 fila += 1
                 continue
+            if inconsistencia == 'registro':
+                desc = 'En tabla de delitos para tipos de víctima, no se puede registar datos distintos a cero en numerales indicados por columna a continuación'+str(errores[pregunta][inconsistencia])
+                escribir(pregunta,'Errores de registro (letras en lugar de números, respuestas diferentes al catálogo proporcionado, NS o NA aplicado incorrectamente)',
+                         desc,fila,pagina)
+                fila += 1
+                continue 
             if inconsistencia == 'catalogo':
                 desc = ' : '.join(errores[pregunta][inconsistencia])
                 escribir(pregunta,'Errores de registro (letras en lugar de números, respuestas diferentes al catálogo proporcionado, NS o NA aplicado incorrectamente)',
+                         desc,fila,pagina)
+                fila += 1
+                continue
+            if inconsistencia == 'numerales y columnas  donde otros delitos son mayores a 25%':
+                desc = ' , '.join(errores[pregunta][inconsistencia])
+                desc = 'Numerales y columnas donde otro tipo de delito supera el 25% de su bien jurídico: '+ desc
+                escribir(pregunta,'Falta de comentario explicativo sobre diferencia de la información reportada con respecto al cumplimiento de la instrucción o validaciión establecida ',
                          desc,fila,pagina)
                 fila += 1
                 continue
