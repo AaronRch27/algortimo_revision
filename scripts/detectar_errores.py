@@ -7,7 +7,7 @@ Created on Fri Jun 17 14:27:15 2022
 from FO import generar_formato
 import pandas as pd
 
-def errores(cuestionario,nombre):
+def errores(cuestionario,nombre,indica):
     """
     
 
@@ -18,7 +18,8 @@ def errores(cuestionario,nombre):
         documento de excel a dataframes y sus propiedades. Contiene 
         entonces llaves para cada pestaña del documento con preguntas
         validables, y en cada llave hay otras llaves, una por pregunta.
-
+    indica : dataframe generado con las validaciones que se van a
+        aplicar a todas las preguntas del cuestionario
     Returns
     -------
     Regresa una lista con los errores detectados en tres áreas: 
@@ -30,9 +31,10 @@ def errores(cuestionario,nombre):
     error detectado
 
     """
-    errores, censo = iterar_cuestionario(cuestionario)
+    errores, censo = iterar_cuestionario(cuestionario, indica)
+    #dado que se harán validaciones respecto a indica, no hace falta depurar errores
     #depurar
-    errores = depurar(errores)
+    # errores = depurar(errores)
 
     generar_formato(errores, censo, nombre)
     # print(errores)
@@ -68,8 +70,10 @@ def depurar(errores):
     
     return errores
 
-def iterar_cuestionario(cuestionario):
+def iterar_cuestionario(cuestionario,base):
     "comprobar errores en cada pregunta"
+    p = [l[:-2] for l in list(base['preguntas'])]
+    base['preguntas'] = p
     errores = {}
     censo = ''
     for llave in cuestionario:
@@ -83,44 +87,45 @@ def iterar_cuestionario(cuestionario):
                 censo = ''.join(cut for cut in nombres[1] if cut not in rem_le)
                 if 'Unnamed' in censo:
                     censo = 'Hoja de pruebas'
-            for tabla in tablas:
-                if type(tablas[tabla]) == str:
-                    continue
-                #comprobar si la tabla está toda en blanco
-                t1 = tabla_vacia(tablas[tabla])
-                if not t1:#si está vacía la salta
-                    continue
-                df = tablas[tabla].copy()#con copia para no afectar el frame original
-                ndf = quitar_sinonosabe(df)
-                aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
-                if aritme1 == 'Si':
-                    if cuestionario[llave][pregunta].tipo_T == 'Tabla':
-                        aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
-                        if aritmeticos:
-                            errores[pregunta] = aritmeticos
-                    if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
-                        aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
-                        if aritmeticos:
-                            errores[pregunta] = aritmeticos
-                    if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
-                        aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
-                        if aritmeticos:
-                            errores[pregunta] = aritmeticos
-            #validación para todas las preguntas de si no no se sabe.
-                otra_copia = tablas[tabla].copy()
-                sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
-                if sinon:
-                    if pregunta in errores:
-                        try:
-                            errores[pregunta].append(sinon)
-                        except:#si existe eror previo puede que no sea lista sin dict
-                            for k in sinon:
-                                if k in errores[pregunta]:
-                                    errores[pregunta][k] += sinon[k]
-                                if k not in errores[pregunta]:
-                                    errores[pregunta][k] = sinon[k]
-                    if pregunta not in errores:
-                        errores[pregunta] = sinon
+            
+            # for tabla in tablas:
+            #     if type(tablas[tabla]) == str:
+            #         continue
+            #     #comprobar si la tabla está toda en blanco
+            #     t1 = tabla_vacia(tablas[tabla])
+            #     if not t1:#si está vacía la salta
+            #         continue
+            #     df = tablas[tabla].copy()#con copia para no afectar el frame original
+            #     ndf = quitar_sinonosabe(df)
+            #     aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
+            #     if aritme1 == 'Si':
+            #         if cuestionario[llave][pregunta].tipo_T == 'Tabla':
+            #             aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
+            #             if aritmeticos:
+            #                 errores[pregunta] = aritmeticos
+            #         if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
+            #             aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
+            #             if aritmeticos:
+            #                 errores[pregunta] = aritmeticos
+            #         if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
+            #             aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
+            #             if aritmeticos:
+            #                 errores[pregunta] = aritmeticos
+            # #validación para todas las preguntas de si no no se sabe.
+            #     otra_copia = tablas[tabla].copy()
+            #     sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
+            #     if sinon:
+            #         if pregunta in errores:
+            #             try:
+            #                 errores[pregunta].append(sinon)
+            #             except:#si existe eror previo puede que no sea lista sin dict
+            #                 for k in sinon:
+            #                     if k in errores[pregunta]:
+            #                         errores[pregunta][k] += sinon[k]
+            #                     if k not in errores[pregunta]:
+            #                         errores[pregunta][k] = sinon[k]
+            #         if pregunta not in errores:
+            #             errores[pregunta] = sinon
             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
             # print('hasta aquie vba bien ',pregunta)
             # modo excepcion:
@@ -146,6 +151,85 @@ def iterar_cuestionario(cuestionario):
             #         errores[pregunta] = consist
             
     return errores, censo
+
+# def iterar_cuestionario(cuestionario,base):
+#     "comprobar errores en cada pregunta"
+#     errores = {}
+#     censo = ''
+#     for llave in cuestionario:
+#         for pregunta in cuestionario[llave]:
+#             print('comienzo de errores ', pregunta)
+#             tablas = cuestionario[llave][pregunta].tablas
+#             if censo == '':
+#                 conseguir_censo = cuestionario[llave][pregunta].dfraw
+#                 nombres = list(conseguir_censo.columns)
+#                 rem_le = ['0','1','2','3','4','5','6','7','8','9','\n']
+#                 censo = ''.join(cut for cut in nombres[1] if cut not in rem_le)
+#                 if 'Unnamed' in censo:
+#                     censo = 'Hoja de pruebas'
+#             for tabla in tablas:
+#                 if type(tablas[tabla]) == str:
+#                     continue
+#                 #comprobar si la tabla está toda en blanco
+#                 t1 = tabla_vacia(tablas[tabla])
+#                 if not t1:#si está vacía la salta
+#                     continue
+#                 df = tablas[tabla].copy()#con copia para no afectar el frame original
+#                 ndf = quitar_sinonosabe(df)
+#                 aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
+#                 if aritme1 == 'Si':
+#                     if cuestionario[llave][pregunta].tipo_T == 'Tabla':
+#                         aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
+#                         if aritmeticos:
+#                             errores[pregunta] = aritmeticos
+#                     if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
+#                         aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
+#                         if aritmeticos:
+#                             errores[pregunta] = aritmeticos
+#                     if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
+#                         aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
+#                         if aritmeticos:
+#                             errores[pregunta] = aritmeticos
+#             #validación para todas las preguntas de si no no se sabe.
+#                 otra_copia = tablas[tabla].copy()
+#                 sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
+#                 if sinon:
+#                     if pregunta in errores:
+#                         try:
+#                             errores[pregunta].append(sinon)
+#                         except:#si existe eror previo puede que no sea lista sin dict
+#                             for k in sinon:
+#                                 if k in errores[pregunta]:
+#                                     errores[pregunta][k] += sinon[k]
+#                                 if k not in errores[pregunta]:
+#                                     errores[pregunta][k] = sinon[k]
+#                     if pregunta not in errores:
+#                         errores[pregunta] = sinon
+#             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
+#             # print('hasta aquie vba bien ',pregunta)
+#             # modo excepcion:
+
+#             # try:
+#             #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+#             # except:
+#             #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+#             #modo localizar errores:
+#             # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+#             # if consist:
+                
+#             #     if pregunta in errores:
+#             #         try:
+#             #             errores[pregunta].append(consist)
+#             #         except:#si existe eror previo puede que no sea lista sin dict
+#             #             for k in consist:
+#             #                 if k in errores[pregunta]:
+#             #                     errores[pregunta][k] += consist[k]
+#             #                 if k not in errores[pregunta]:
+#             #                     errores[pregunta][k] = consist[k]
+#             #     if pregunta not in errores:
+#             #         errores[pregunta] = consist
+            
+#     return errores, censo
 
 def val_delitos(df,context,ntabla):
     """
