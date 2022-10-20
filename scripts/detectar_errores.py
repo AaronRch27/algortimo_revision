@@ -87,71 +87,102 @@ def iterar_cuestionario(cuestionario,base):
                 censo = ''.join(cut for cut in nombres[1] if cut not in rem_le)
                 if 'Unnamed' in censo:
                     censo = 'Hoja de pruebas'
+            fila_indicador = 0
+            for indic in p:
+                if indic == pregunta:
+                    break
+                fila_indicador += 1 
+            validaciones = base.loc[fila_indicador,:]#para multiples tablas seguramente se hará dentro de la iteracion por tabla
             
-            # for tabla in tablas:
-            #     if type(tablas[tabla]) == str:
-            #         continue
+            for tabla in tablas:
+                if type(tablas[tabla]) == str:
+                    continue
+                #Lo primero es ver si la tabla debe ser saltada, por alguna relación con preguntas anteriores
+                if validaciones['salto_preguntas']:
+                    #aun pendiente por cóom ejecutar esta validación
+                    print('debe saltar')#solo un indicador, borrar después
+                    
+                    #aquí alguna funcion para verificar esos saltos de preguntas  y comprobación en blanco
             #     #comprobar si la tabla está toda en blanco
             #     t1 = tabla_vacia(tablas[tabla])
             #     if not t1:#si está vacía la salta
             #         continue
-            #     df = tablas[tabla].copy()#con copia para no afectar el frame original
-            #     ndf = quitar_sinonosabe(df)
-            #     aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
-            #     if aritme1 == 'Si':
-            #         if cuestionario[llave][pregunta].tipo_T == 'Tabla':
-            #             aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
-            #             if aritmeticos:
-            #                 errores[pregunta] = aritmeticos
-            #         if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
-            #             aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
-            #             if aritmeticos:
-            #                 errores[pregunta] = aritmeticos
-            #         if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
-            #             aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
-            #             if aritmeticos:
-            #                 errores[pregunta] = aritmeticos
-            # #validación para todas las preguntas de si no no se sabe.
-            #     otra_copia = tablas[tabla].copy()
-            #     sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
-            #     if sinon:
-            #         if pregunta in errores:
-            #             try:
-            #                 errores[pregunta].append(sinon)
-            #             except:#si existe eror previo puede que no sea lista sin dict
-            #                 for k in sinon:
-            #                     if k in errores[pregunta]:
-            #                         errores[pregunta][k] += sinon[k]
-            #                     if k not in errores[pregunta]:
-            #                         errores[pregunta][k] = sinon[k]
-            #         if pregunta not in errores:
-            #             errores[pregunta] = sinon
-            #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
-            # print('hasta aquie vba bien ',pregunta)
-            # modo excepcion:
-
-            # try:
-            #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-            # except:
-            #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-            #modo localizar errores:
-            # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-            # if consist:
-                
-            #     if pregunta in errores:
-            #         try:
-            #             errores[pregunta].append(consist)
-            #         except:#si existe eror previo puede que no sea lista sin dict
-            #             for k in consist:
-            #                 if k in errores[pregunta]:
-            #                     errores[pregunta][k] += consist[k]
-            #                 if k not in errores[pregunta]:
-            #                     errores[pregunta][k] = consist[k]
-            #     if pregunta not in errores:
-            #         errores[pregunta] = consist
+                if validaciones['aritmetico']:  
+        
+                    df = tablas[tabla].copy()#con copia para no afectar el frame original
+                    ndf = quitar_sinonosabe(df)
+                    #aunque ya se indicó, se hace evaluacion adicional para validar totales de forma aritmética
+                    aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
+                    aritme1 = 'Si' #no hay forma de que sea no, si se ha indicado que se requiere esta validación
+                    if aritme1 == 'Si':
+                        if cuestionario[llave][pregunta].tipo_T == 'Tabla':
+                            aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
+                            if aritmeticos:
+                                errores[pregunta] = aritmeticos
+                        if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
+                            aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
+                            if aritmeticos:
+                                errores[pregunta] = aritmeticos
+                        if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
+                            aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
+                            if aritmeticos:
+                                errores[pregunta] = aritmeticos
+                if validaciones['blanco']:
+                #ver si hay espacios en blanco y tomar en cuenta excepciones sinonosabe, Usos de X en no aplica etc
+                #validación para todas las preguntas de si no no se sabe.
+                #hacer una para blancos exclusivamente
+                #integrar validacion de No aplica con X--- se supne que ya---probar
+                    otra_copia = tablas[tabla].copy()
+                    sinon = sinonosabe(otra_copia,
+                                       cuestionario[llave][pregunta].autosuma,
+                                       cuestionario[llave][pregunta].tipo_T)
+                    if sinon:
+                        if pregunta in errores:
+                            try:
+                                errores[pregunta].append(sinon)
+                            except:#si existe eror previo puede que no sea lista sin dict
+                                for k in sinon:
+                                    if k in errores[pregunta]:
+                                        errores[pregunta][k] += sinon[k]
+                                    if k not in errores[pregunta]:
+                                        errores[pregunta][k] = sinon[k]
+                        if pregunta not in errores:
+                            errores[pregunta] = sinon
+                        
+                #resto de validaciones pendientes:
+                # if validaciones['suma_numeral']:
+                    
+                # if validaciones['espeficique']:
+                    
+                # if validaciones['errores_registro']:#esta validacion no se desarrollará ya que existe en aritmético, y esto es más eficiente así ya que hay columnas fuera de validaciones aritmética que aceptan otro valores y en ellas no conviene esto.
+                    
+                # if validaciones['preguntas_relacionadas']:
+                    #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
+                    # print('hasta aquie vba bien ',pregunta)
+                    # modo excepcion:
+        
+                    # try:
+                    #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
+                    # except:
+                    #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
+                    #modo localizar errores:
+                    # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
+                    # if consist:
+                        
+                    #     if pregunta in errores:
+                    #         try:
+                    #             errores[pregunta].append(consist)
+                    #         except:#si existe eror previo puede que no sea lista sin dict
+                    #             for k in consist:
+                    #                 if k in errores[pregunta]:
+                    #                     errores[pregunta][k] += consist[k]
+                    #                 if k not in errores[pregunta]:
+                    #                     errores[pregunta][k] = consist[k]
+                    #     if pregunta not in errores:
+                    #         errores[pregunta] = consist
             
     return errores, censo
-
+    
 # def iterar_cuestionario(cuestionario,base):
 #     "comprobar errores en cada pregunta"
 #     errores = {}
@@ -1482,13 +1513,15 @@ def pregunta_comparar(nombre,instruccion):
         return pregunta_c
 
 
-def sinonosabe(df,autosuma):
+def sinonosabe(df1,autosuma,tipo):
     """
     
 
     Parameters
     ----------
     df : dataframe de la pregunta
+    autosuma: str si hay autosuma en la tabla o no
+    tipo : str el tipo de la tabla(tabla,nt_desagregados o de delitos)
 
     Returns
     -------
@@ -1496,99 +1529,114 @@ def sinonosabe(df,autosuma):
     sobre contestar a preguntas de si no no se sabe dentro de tablas,
     así como las de no aplica (son preguntas en donde se debe dejar en
     blanco el resto de la fila o contestar puro cero o na, cualquier 
-    otro valor es un error).
+    otro valor es un error). También da errores de blanco
 
     """
+    df = df1.copy()
     errores = {}
-    indices = list(df.iloc[:,0])
-    df = df.replace({'borra':0,'NS':0,'NA':0})
-    if autosuma == 'Si':#porque aquí también hay tablas con autosuma y esa fila no sirve para esta validacion
-        bor = df.shape
-        df = df.drop([bor[0]-1],axis=0)
-    separar = []
-    no_aplica = []
-    c = 0
-    for columna in df:
-        if 'No aplica' in str(columna):
-            no_aplica.append(c)
-        texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
-        comparar = '1.Sí/2.'
-        if comparar in texto:
-            separar.append(c)
-        c += 1
-    if not separar:#porque no se detectó columna que tenga lo que a esta validacion importa
-        return
-    
-    if no_aplica:
-        no_a = list(df.iloc[:,no_aplica[0]]) #es la columna de no aplica
-    c = 0
-    for sep in separar:
-        try:
-            nf = df.iloc[:,sep:separar[c+1]]
-        except:
-            nf = df.iloc[:,sep:]#para el ultimo valor de la lista, o si solo hay uno
-        lista = list(nf.iloc[:,0])
-        c1 = 0
-        for elemento in lista:
-            fila = list(nf.iloc[c1])
-            
-            #comporbar si hay strings
-            for val in fila:
-                if type(val) == str:
-                    string = 1
-                    break
-                else:
-                    string = 0
-      
-            if string == 0:#porque aveces solo son filas con texto, normalmente en preguntas unifila
-                if fila[0] > 1:
-                    if sum(fila[1:]) > 0:
-                        if 'catalogo' in errores:
-                            errores['catalogo'].append(f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}')
-                        if 'catalogo' not in errores:
-                            errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
-                if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
-                    # print(indices[c1],'11111111111')
-                    if no_aplica:
-                        if no_a[c1] != 'X':
+    if tipo != "NT_Desagregados":
+        indices = list(df.iloc[:,0])
+        df = df.replace({'borra':0,'NS':0,'NA':0})
+        if autosuma == 'Si':#porque aquí también hay tablas con autosuma y esa fila no sirve para esta validacion
+            bor = df.shape
+            df = df.drop([bor[0]-1],axis=0)
+        separar = []
+        no_aplica = []
+        c = 0
+        for columna in df:
+            if 'No aplica' in str(columna):
+                no_aplica.append(c)
+            texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
+            comparar = '1.Sí/2.'
+            if comparar in texto:
+                separar.append(c)
+            c += 1
+        if not separar:#porque no se detectó columna que tenga lo que a esta validacion importa
+            #se hace detcción de blancos
+            if not no_aplica:
+                nf = 0
+                for fila in indices:
+                    if fila != 'borra':
+                        fila_comp = list(df1.iloc[nf,1:]) #con esto ya se tiene la fila sin el index
+                        print(fila_comp)
+                        if 'borra' in fila_comp:
+                            if 'blanco' in errores:
+                                errores['blanco'].append(f'Fila {nf} tiene espacios en blanco')
+                            if 'blanco' not in errores:
+                                errores['blanco'] = [f'Fila {nf} tiene espacios en blanco']
+                    nf +=1 
+            return errores
+        
+        if no_aplica:
+            no_a = list(df.iloc[:,no_aplica[0]]) #es la columna de no aplica
+        c = 0
+        for sep in separar:
+            try:
+                nf = df.iloc[:,sep:separar[c+1]]
+            except:
+                nf = df.iloc[:,sep:]#para el ultimo valor de la lista, o si solo hay uno
+            lista = list(nf.iloc[:,0])
+            c1 = 0
+            for elemento in lista:
+                fila = list(nf.iloc[c1])
+                
+                #comporbar si hay strings
+                for val in fila:
+                    if type(val) == str:
+                        string = 1
+                        break
+                    else:
+                        string = 0
+          
+                if string == 0:#porque aveces solo son filas con texto, normalmente en preguntas unifila
+                    if fila[0] > 1:
+                        if sum(fila[1:]) > 0:
+                            if 'catalogo' in errores:
+                                errores['catalogo'].append(f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}')
+                            if 'catalogo' not in errores:
+                                errores['catalogo'] = [f'Por respuesta de catálago, la suma de los desagregados no puede ser mayor que cero en fila {c1+1}']
+                    if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
+                        # print(indices[c1],'11111111111')
+                        if no_aplica:
+                            if no_a[c1] != 'X':
+                                if 'catalogo' in errores:
+                                    errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
+                                if 'catalogo' not in errores:
+                                    errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
+                        if not no_aplica:
                             if 'catalogo' in errores:
                                 errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
                             if 'catalogo' not in errores:
                                 errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
-                    if not no_aplica:
+                    if fila[0] == 1:
+                        if fila[1:]:#porque si la fila esta vacia no es un error ya que es la ultima columna y no hay nada con que corroborar
+                            if sum(fila[1:]) == 0:
+                                if 'catalogo' in errores:
+                                    errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
+                                if 'catalogo' not in errores:
+                                    errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
+                if string == 1:
+                    if fila[0] > 1:
+                        if fila[1:]:
+                            if 'catalogo' in errores:
+                                errores['catalogo'].append(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
+                            if 'catalogo' not in errores:
+                                errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
+                    if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
+                        # print(indices[c1],'11111111111')
                         if 'catalogo' in errores:
                             errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
                         if 'catalogo' not in errores:
                             errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
-                if fila[0] == 1:
-                    if fila[1:]:#porque si la fila esta vacia no es un error ya que es la ultima columna y no hay nada con que corroborar
-                        if sum(fila[1:]) == 0:
-                            if 'catalogo' in errores:
-                                errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
-                            if 'catalogo' not in errores:
-                                errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
-            if string == 1:
-                if fila[0] > 1:
-                    if fila[1:]:
-                        if 'catalogo' in errores:
-                            errores['catalogo'].append(f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}')
-                        if 'catalogo' not in errores:
-                            errores['catalogo'] = [f'Por respuesta de catálago, no puede registrar nada en el resto de la fila {c1+1}']
-                if fila[0] == 0 and 'borra' not in indices[c1] and c == 0:
-                    # print(indices[c1],'11111111111')
-                    if 'catalogo' in errores:
-                        errores['catalogo'].append(f'Faltó contestar pregunta de catálogo en fila {c1+1}')
-                    if 'catalogo' not in errores:
-                        errores['catalogo'] = [f'Faltó contestar pregunta de catálogo en fila {c1+1}']
-                    if fila[0] == 1:
-                        if not fila[1:]: #porque sino hay más fila, entonces es la última columna y no hay error
-                            
-                            if 'catalogo' in errores:
-                                errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
-                            if 'catalogo' not in errores:
-                                errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
-            c1 += 1
-        c += 1
+                        if fila[0] == 1:
+                            if not fila[1:]: #porque sino hay más fila, entonces es la última columna y no hay error
+                                
+                                if 'catalogo' in errores:
+                                    errores['catalogo'].append(f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}')
+                                if 'catalogo' not in errores:
+                                    errores['catalogo'] = [f'Por respuesta de catálago, se debe reportar algo en los desagregados de fila {c1+1}']
+                c1 += 1
+            c += 1
     return errores
 
 def quitar_sinonosabe(df):
