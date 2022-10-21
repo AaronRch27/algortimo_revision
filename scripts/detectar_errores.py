@@ -152,7 +152,8 @@ def iterar_cuestionario(cuestionario,base):
                 #resto de validaciones pendientes:
                 # if validaciones['suma_numeral']:
                     
-                # if validaciones['espeficique']:
+                if validaciones['espeficique']:
+                    espec = especifique(cuestionario[llave][pregunta])
                     
                 # if validaciones['errores_registro']:#esta validacion no se desarrollará ya que existe en aritmético, y esto es más eficiente así ya que hay columnas fuera de validaciones aritmética que aceptan otro valores y en ellas no conviene esto.
                     
@@ -182,6 +183,14 @@ def iterar_cuestionario(cuestionario,base):
                     #         errores[pregunta] = consist
             
     return errores, censo
+   
+def especifique(pregunta):
+    "validar especifique, pregunta es objeto pregunta"
+    errores = {}
+    
+    
+    
+    return errores
     
 # def iterar_cuestionario(cuestionario,base):
 #     "comprobar errores en cada pregunta"
@@ -1534,6 +1543,9 @@ def sinonosabe(df1,autosuma,tipo):
     """
     df = df1.copy()
     errores = {}
+    # if tipo == "NT_Desagregados":
+    #     #aqui solo se va a buscar espacios en blanco porque son preguntas con datos en un formato no de tabla
+        
     if tipo != "NT_Desagregados":
         indices = list(df.iloc[:,0])
         df = df.replace({'borra':0,'NS':0,'NA':0})
@@ -1558,12 +1570,12 @@ def sinonosabe(df1,autosuma,tipo):
                 for fila in indices:
                     if fila != 'borra':
                         fila_comp = list(df1.iloc[nf,1:]) #con esto ya se tiene la fila sin el index
-                        print(fila_comp)
+                        
                         if 'borra' in fila_comp:
                             if 'blanco' in errores:
-                                errores['blanco'].append(f'Fila {nf} tiene espacios en blanco')
+                                errores['blanco'].append(f'Fila {nf+1} tiene espacios en blanco')
                             if 'blanco' not in errores:
-                                errores['blanco'] = [f'Fila {nf} tiene espacios en blanco']
+                                errores['blanco'] = [f'Fila {nf+1} tiene espacios en blanco']
                     nf +=1 
             return errores
         

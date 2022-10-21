@@ -364,6 +364,35 @@ class clase_pregunta():
             self.tipo_T = 'NT_Desagregados'
             self.T_tip = 'desagregados'
             nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
+            #rellenar espacios en blanco
+            
+            fila = 0
+            for f in list(nuevo_df.iloc[:,0]):
+                filal = list(nuevo_df.iloc[fila,:])
+                #por fila se hará la comprobación. 
+                columna = 0
+                for v in filal:
+                    
+                    if v != '    ':
+                        romper = False
+                        
+                        for m in filal[:columna]:
+                            if m != '    ':
+                                romper = True
+                        print(romper,filal)
+                        if romper:
+                            print('romper')
+                            nuevo_df.iloc[fila,columna-2] = 999999999
+                                
+                        # if columna-3 >= 0:
+                        #     if filal[columna - 3] == '    ':
+                                
+                        #         nuevo_df.iloc[fila,columna-3] = 999999999 #bo va a ser el valor de espacios vacios en este tipo de preguntas
+                               
+                    columna += 1
+                fila += 1
+             
+            
             nfram = {}
             nombres_c = list(nuevo_df.columns)
             col = 0
