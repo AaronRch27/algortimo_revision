@@ -365,31 +365,61 @@ class clase_pregunta():
             self.T_tip = 'desagregados'
             nuevo_df = nuevo_df.fillna('    ')#cuatro espacios
             #rellenar espacios en blanco
+            #para ello borrar columnas y filas que tienen nada
+            borrar = []
+            for col in nuevo_df:
+                check = list(nuevo_df[col])
+                unicos = list(set(check))
+                # print(unicos)
+                if len(unicos) == 1:
+                    borrar.append(col)
+            if borrar:
+                nuevo_df = nuevo_df.drop(borrar, axis=1, inplace=True)
+            #ahora lo mismo pero por filas
+            
+            borrar = []
+            for fila in range(nuevo_df.shape[0]):
+                ff = list(nuevo_df.iloc[fila,:])
+                unicos = list(set(ff))
+
+                if len(unicos) == 1:
+                    borrar.append(fila)
+            
+            nuevo_df = nuevo_df.drop(borrar, axis=0)
+            nuevo_df = nuevo_df.reset_index(drop=True)
             
             fila = 0
             for f in list(nuevo_df.iloc[:,0]):
                 filal = list(nuevo_df.iloc[fila,:])
                 #por fila se hará la comprobación. 
+
                 columna = 0
                 for v in filal:
-                    
+                    print(len(filal),filal)
                     if v != '    ':
                         romper = False
+                        if len(filal[:columna]) > 2:#para que no haga cosas en las primeras columnas ya que ahí van los valores en blanco
                         
-                        for m in filal[:columna]:
-                            if m != '    ':
-                                romper = True
-                        print(romper,filal)
-                        if romper:
-                            print('romper')
-                            nuevo_df.iloc[fila,columna-2] = 999999999
-                                
+                            for m in filal[:columna]:
+                                if m != '    ':#si un valor no e sen blanco romper
+                                    romper = True
+                                    
+
+                                    
+                        if not romper and columna > 1:
+                            r = columna - 2
+                            
+                            if nuevo_df.iloc[fila,r] == '    ':#ultima rectificación de que no se va alterar un valor que no es blanco
+                                # print('romper',nuevo_df.iloc[fila,r],filal,columna)
+                                nuevo_df.iloc[fila,r] = 'BO'
+                             
                         # if columna-3 >= 0:
                         #     if filal[columna - 3] == '    ':
                                 
                         #         nuevo_df.iloc[fila,columna-3] = 999999999 #bo va a ser el valor de espacios vacios en este tipo de preguntas
                                
                     columna += 1
+
                 fila += 1
              
             

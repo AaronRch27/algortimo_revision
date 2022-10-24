@@ -108,7 +108,7 @@ def iterar_cuestionario(cuestionario,base):
             #     if not t1:#si está vacía la salta
             #         continue
                 if validaciones['aritmetico']:  
-        
+                    
                     df = tablas[tabla].copy()#con copia para no afectar el frame original
                     ndf = quitar_sinonosabe(df)
                     #aunque ya se indicó, se hace evaluacion adicional para validar totales de forma aritmética
@@ -1543,9 +1543,16 @@ def sinonosabe(df1,autosuma,tipo):
     """
     df = df1.copy()
     errores = {}
-    # if tipo == "NT_Desagregados":
-    #     #aqui solo se va a buscar espacios en blanco porque son preguntas con datos en un formato no de tabla
-        
+    if tipo == "NT_Desagregados":
+        #aqui solo se va a buscar espacios en blanco porque son preguntas con datos en un formato no de tabla
+        v = df1.isin(['BO']).any().any()
+        if v:
+            if 'blanco' in errores:
+                errores['blanco'].append('Hay espacios en blanco')
+            if 'blanco' not in errores:
+                errores['blanco'] = ['Hay espacios en blanco']
+        return errores
+    
     if tipo != "NT_Desagregados":
         indices = list(df.iloc[:,0])
         df = df.replace({'borra':0,'NS':0,'NA':0})
@@ -1707,6 +1714,7 @@ def totales_columna(df1):
             ins = lista[-1] #es el total
             lista.insert(0, ins)
             lista.pop(-1)
+            # print(lista)
             aritme = evaluador_suma(lista,f'columna {col}')
             if aritme:
                 if 'aritmetico' in errores:
