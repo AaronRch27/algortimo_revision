@@ -395,7 +395,7 @@ class clase_pregunta():
 
                 columna = 0
                 for v in filal:
-                    print(len(filal),filal)
+                    
                     if v != '    ':
                         romper = False
                         if len(filal[:columna]) > 2:#para que no haga cosas en las primeras columnas ya que ahí van los valores en blanco
@@ -552,69 +552,65 @@ class clase_pregunta():
         # nombres_iniciales = list(nuevo_df.columns)
         # print(nombres_iniciales)
         #Encontrar numeral para determinar si es tabla con varias filas o de fila única y perfilar los nombres de columnas
-        bus = ['1.', '1. ', '01.', '01. ','1','01.01']
-        comprobador = []
+        
         val = {}
         # print('por encontrar', list(nuevo_df['Unnamed: 2']))
-        for uno in bus:
+
+        Revisar = 0
+        for val11 in list(nuevo_df['Unnamed: 2']):
+            if type(val11) == str:
+                if val11[0].isdecimal():
+                    Revisar = 1
+        # print(Revisar)
+        if Revisar == 1: #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
+            self.T_tip = 'index'
             
-            if comprobador: #no tiene caso que se siga iterando si ya lo encontró
-                break
-            # print(nuevo_df.columns)
-            Revisar = 0
-            for val11 in list(nuevo_df['Unnamed: 2']):
-                if type(val11) == str:
-                    if val11.startswith(uno):
-                        Revisar = 1
-            # print(Revisar)
-            if uno in list(nuevo_df['Unnamed: 2']) or Revisar == 1: #nombres iniciales [2] es una referencia a la columna unnamed 2, pero ésta aveces cambia de nombre porque se borra cuando hay una mala lectura de la tabla
-                self.T_tip = 'index'
-                comprobador.append(1)
-                c = 0
-                index = 0
-                for fila in nuevo_df['Unnamed: 2'].values:
-                    if str(uno) in str(fila):
+            c = 0
+            index = 0
+            for fila in nuevo_df['Unnamed: 2'].values:
+                if type(fila)==str:
+                    if fila[0].isdecimal():
                         index = c
                         break
-                    c += 1
-                nuevo_df = nuevo_df.fillna('borra')
-                nombres = []
-                cn = 0
-                self.encabezado_tabla = nuevo_df.iloc[0:index,:]
-                for col in nuevo_df:
-                    #aqui se mete el proceso para los nombres de columnas
-                    ap = list(nuevo_df[col])
-                    nombres = ap[:index]
-                    if 'borra' in nombres:
-                        veces = nombres.count('borra')
-                        for vez in range(veces):
-                            nombres.remove('borra')
-                    if nombres:
-                        nombre = str(nombres[-1])
-                    if nombre in val:
-                        while True:
-                            if nombre in val:
-                                nombre += '1'
-                            if nombre not in val:
-                                break
-                    if not nombres: #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
-                        ind = 0
-                        nl = []
-                        for key in val:
-                            nombre = key #con esta iteracion se asegura tener el útimo nombre registrado de columna para juntarla
-                        for elem in val[nombre]:
-                            nl.append(str(elem) + ' '+ str(ap[index:][ind]))
-                            ind += 1
-                        val[nombre] = nl
-                    
-                    if nombre not in val:
-                        val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
-                    cn += 1
-                if 'Código1' in val:
-                    val.pop('Código1') #borrar porque esta columna es un error
-                nuevo_df = pd.DataFrame(val)
+                c += 1
+            nuevo_df = nuevo_df.fillna('borra')
+            nombres = []
+            cn = 0
+            self.encabezado_tabla = nuevo_df.iloc[0:index,:]
+            for col in nuevo_df:
+                #aqui se mete el proceso para los nombres de columnas
+                ap = list(nuevo_df[col])
+                nombres = ap[:index]
+                if 'borra' in nombres:
+                    veces = nombres.count('borra')
+                    for vez in range(veces):
+                        nombres.remove('borra')
+                if nombres:
+                    nombre = str(nombres[-1])
+                if nombre in val:
+                    while True:
+                        if nombre in val:
+                            nombre += '1'
+                        if nombre not in val:
+                            break
+                if not nombres: #si el nombre generado ya está en el diccionario, hay que unir ambas columnas
+                    ind = 0
+                    nl = []
+                    for key in val:
+                        nombre = key #con esta iteracion se asegura tener el útimo nombre registrado de columna para juntarla
+                    for elem in val[nombre]:
+                        nl.append(str(elem) + ' '+ str(ap[index:][ind]))
+                        ind += 1
+                    val[nombre] = nl
+                
+                if nombre not in val:
+                    val[nombre] = ap[index:] #por los nan, se sobre escriben algunas columnas
+                cn += 1
+            if 'Código1' in val:
+                val.pop('Código1') #borrar porque esta columna es un error
+            nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
-        if not comprobador: #tabla de filas unicas
+        if Revisar == 0: #tabla de filas unicas
             # print('hastaqui bien')
             self.T_tip = 'unifila'
             nuevo_df = nuevo_df.fillna('borra')

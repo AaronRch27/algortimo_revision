@@ -150,10 +150,16 @@ def iterar_cuestionario(cuestionario,base):
                             errores[pregunta] = sinon
                         
                 #resto de validaciones pendientes:
-                # if validaciones['suma_numeral']:
-                    
-                if validaciones['espeficique']:
-                    espec = especifique(cuestionario[llave][pregunta])
+                if validaciones['suma_numeral']:
+                    sumas = suma_numeral(tablas[tabla],validaciones['s_num_lis'])
+                    if sumas:
+                        if 'aritmetico' in errores:
+                            for error in sumas:
+                                errores['aritmetico'].append(sumas[error])
+                        if 'aritmetico' not in errores:
+                            errores['aritmetico'] = sumas
+                # if validaciones['espeficique']:
+                #     espec = especifique(cuestionario[llave][pregunta])
                     
                 # if validaciones['errores_registro']:#esta validacion no se desarrollará ya que existe en aritmético, y esto es más eficiente así ya que hay columnas fuera de validaciones aritmética que aceptan otro valores y en ellas no conviene esto.
                     
@@ -184,92 +190,25 @@ def iterar_cuestionario(cuestionario,base):
             
     return errores, censo
    
-def especifique(pregunta):
-    "validar especifique, pregunta es objeto pregunta"
+def suma_numeral(tabla,listadlistas):
+    "Validacion de sumas por columna para numerales de tabla,con lista de listas de los que deben ser sumados"
     errores = {}
-    
-    
-    
+    for lista in listadlistas:
+        #cada lista tendrá valor de inicio y de término nada más, es decir, dos elementos. 
+        #la comprobación de longitudes de tabla y elementos de lista debe hacerse en generar base
+        indices = [ lista[0]+x for x in range(1,lista[1]-lista[0]+1)]
+        indices.append(lista[0])#para que primer valor sea el ultimo y se tome como autosuma
+        to_val = tabla.iloc[indices,1:]#del uno para la derecha con el fin de evitar columna de indices de tabla
+        ercol = totales_columna(to_val) 
+        if ercol:
+            if 'aritmetico' in errores:
+                errores['aritmetico']+=ercol
+            if 'aritmetico' not in errores:
+                errores['aritmetico'] = ercol
+        
     return errores
     
-# def iterar_cuestionario(cuestionario,base):
-#     "comprobar errores en cada pregunta"
-#     errores = {}
-#     censo = ''
-#     for llave in cuestionario:
-#         for pregunta in cuestionario[llave]:
-#             print('comienzo de errores ', pregunta)
-#             tablas = cuestionario[llave][pregunta].tablas
-#             if censo == '':
-#                 conseguir_censo = cuestionario[llave][pregunta].dfraw
-#                 nombres = list(conseguir_censo.columns)
-#                 rem_le = ['0','1','2','3','4','5','6','7','8','9','\n']
-#                 censo = ''.join(cut for cut in nombres[1] if cut not in rem_le)
-#                 if 'Unnamed' in censo:
-#                     censo = 'Hoja de pruebas'
-#             for tabla in tablas:
-#                 if type(tablas[tabla]) == str:
-#                     continue
-#                 #comprobar si la tabla está toda en blanco
-#                 t1 = tabla_vacia(tablas[tabla])
-#                 if not t1:#si está vacía la salta
-#                     continue
-#                 df = tablas[tabla].copy()#con copia para no afectar el frame original
-#                 ndf = quitar_sinonosabe(df)
-#                 aritme1, ntab = exam_aritme(ndf,cuestionario[llave][pregunta]) #corroborar si vale el esfuezro hacer validacion aritmetica--regresa sí o no como priemra vcariable y si es sí, segunda es el DF ya recortado con puntos de interés, sino solo es una variable vacía que no se usará
-#                 if aritme1 == 'Si':
-#                     if cuestionario[llave][pregunta].tipo_T == 'Tabla':
-#                         aritmeticos = totales_fila(ntab,cuestionario[llave][pregunta].autosuma)
-#                         if aritmeticos:
-#                             errores[pregunta] = aritmeticos
-#                     if cuestionario[llave][pregunta].tipo_T == 'NT_Desagregados':
-#                         aritmeticos = totales_columna(ndf)#queda ndf porque ntab es solo para las tablas normales
-#                         if aritmeticos:
-#                             errores[pregunta] = aritmeticos
-#                     if cuestionario[llave][pregunta].tipo_T == 'Tabla_delitos':
-#                         aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
-#                         if aritmeticos:
-#                             errores[pregunta] = aritmeticos
-#             #validación para todas las preguntas de si no no se sabe.
-#                 otra_copia = tablas[tabla].copy()
-#                 sinon = sinonosabe(otra_copia,cuestionario[llave][pregunta].autosuma)
-#                 if sinon:
-#                     if pregunta in errores:
-#                         try:
-#                             errores[pregunta].append(sinon)
-#                         except:#si existe eror previo puede que no sea lista sin dict
-#                             for k in sinon:
-#                                 if k in errores[pregunta]:
-#                                     errores[pregunta][k] += sinon[k]
-#                                 if k not in errores[pregunta]:
-#                                     errores[pregunta][k] = sinon[k]
-#                     if pregunta not in errores:
-#                         errores[pregunta] = sinon
-#             #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
-#             # print('hasta aquie vba bien ',pregunta)
-#             # modo excepcion:
 
-#             # try:
-#             #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-#             # except:
-#             #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-#             #modo localizar errores:
-#             # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-#             # if consist:
-                
-#             #     if pregunta in errores:
-#             #         try:
-#             #             errores[pregunta].append(consist)
-#             #         except:#si existe eror previo puede que no sea lista sin dict
-#             #             for k in consist:
-#             #                 if k in errores[pregunta]:
-#             #                     errores[pregunta][k] += consist[k]
-#             #                 if k not in errores[pregunta]:
-#             #                     errores[pregunta][k] = consist[k]
-#             #     if pregunta not in errores:
-#             #         errores[pregunta] = consist
-            
-#     return errores, censo
 
 def val_delitos(df,context,ntabla):
     """
@@ -1998,7 +1937,7 @@ def evaluador_suma(lista,indi):
         desagregados = lista[1:]
         c = 0
         for valor in desagregados:
-            if valor == 'borra':
+            if valor == 'borra' or valor == 'BO':
                 blanco += 1
             if valor in convertir:
                 if valor.lower() == 'na':
@@ -2012,7 +1951,8 @@ def evaluador_suma(lista,indi):
             if type(valor) == str and valor not in convertir:
                 # print(valor)
                 desagregados[c] = 0
-                if valor != 'borra':
+                brrr = ['borra','BO']
+                if valor not in brrr:
                     
                     for val in columnas_ex:
                         if val in indi:
@@ -2023,7 +1963,7 @@ def evaluador_suma(lista,indi):
         suma = sum(desagregados)
         # print('llega1',total,suma)
         if blanco > 0:
-            if total == 'borra':
+            if total == 'borra' or total == 'BO':
                 blanco += 1
                 if len(lista) == blanco:
                     
