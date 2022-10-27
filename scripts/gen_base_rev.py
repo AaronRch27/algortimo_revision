@@ -225,7 +225,7 @@ class aplicacion(tk.Frame):
         self.sumas_de_numerales()
         
     def no_sumanum(self):
-        self.base['s_num_lis'][self.cont].append([int(self.inicio_suma.get())-1,int(self.fin_suma.get())-1])
+        self.base['s_num_lis'][self.cont].append([int(self.inicio_suma.get()),int(self.fin_suma.get())])
         #solo destruir ventana e ir nuevaente a nex
         self.vv1.destroy()
         self.nex()

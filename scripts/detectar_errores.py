@@ -153,11 +153,15 @@ def iterar_cuestionario(cuestionario,base):
                 if validaciones['suma_numeral']:
                     sumas = suma_numeral(tablas[tabla],validaciones['s_num_lis'])
                     if sumas:
-                        if 'aritmetico' in errores:
-                            for error in sumas:
-                                errores['aritmetico'].append(sumas[error])
-                        if 'aritmetico' not in errores:
-                            errores['aritmetico'] = sumas
+                        if pregunta in errores:
+                            if 'aritmetico' in errores[pregunta]:
+                                for error in sumas:
+                                    errores[pregunta]['aritmetico'].append(sumas[error])
+                            if 'aritmetico' not in errores[pregunta]:
+                                errores[pregunta] = sumas
+                        if pregunta not in errores:
+                            errores[pregunta] = sumas
+                print(errores)
                 # if validaciones['espeficique']:
                 #     espec = especifique(cuestionario[llave][pregunta])
                     
@@ -192,19 +196,22 @@ def iterar_cuestionario(cuestionario,base):
    
 def suma_numeral(tabla,listadlistas):
     "Validacion de sumas por columna para numerales de tabla,con lista de listas de los que deben ser sumados"
+    
+    listadlistas = eval(listadlistas)
     errores = {}
     for lista in listadlistas:
         #cada lista tendrá valor de inicio y de término nada más, es decir, dos elementos. 
         #la comprobación de longitudes de tabla y elementos de lista debe hacerse en generar base
-        indices = [ lista[0]+x for x in range(1,lista[1]-lista[0]+1)]
-        indices.append(lista[0])#para que primer valor sea el ultimo y se tome como autosuma
+        indices = [ lista[0]+x-1 for x in range(1,lista[1])]
+        indices.append(lista[0]-1)#para que primer valor sea el ultimo y se tome como autosuma
         to_val = tabla.iloc[indices,1:]#del uno para la derecha con el fin de evitar columna de indices de tabla
         ercol = totales_columna(to_val) 
+
         if ercol:
             if 'aritmetico' in errores:
-                errores['aritmetico']+=ercol
+                errores['aritmetico']+=ercol['aritmetico']
             if 'aritmetico' not in errores:
-                errores['aritmetico'] = ercol
+                errores['aritmetico'] = ercol['aritmetico']
         
     return errores
     
@@ -1653,7 +1660,7 @@ def totales_columna(df1):
             ins = lista[-1] #es el total
             lista.insert(0, ins)
             lista.pop(-1)
-            # print(lista)
+            
             aritme = evaluador_suma(lista,f'columna {col}')
             if aritme:
                 if 'aritmetico' in errores:
@@ -1961,7 +1968,7 @@ def evaluador_suma(lista,indi):
                         errores.append(f'Error: el valor {valor} no es permitido en {indi}')
             c += 1
         suma = sum(desagregados)
-        # print('llega1',total,suma)
+        # print('llega1',total,suma,desagregados,lista)
         if blanco > 0:
             if total == 'borra' or total == 'BO':
                 blanco += 1
