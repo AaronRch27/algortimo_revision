@@ -156,12 +156,12 @@ def iterar_cuestionario(cuestionario,base):
                         if pregunta in errores:
                             if 'aritmetico' in errores[pregunta]:
                                 for error in sumas:
-                                    errores[pregunta]['aritmetico'].append(sumas[error])
+                                    errores[pregunta]['aritmetico']+=sumas[error]
                             if 'aritmetico' not in errores[pregunta]:
                                 errores[pregunta] = sumas
                         if pregunta not in errores:
                             errores[pregunta] = sumas
-                print(errores)
+                    # print(errores,sumas)
                 # if validaciones['espeficique']:
                 #     espec = especifique(cuestionario[llave][pregunta])
                     
@@ -206,13 +206,13 @@ def suma_numeral(tabla,listadlistas):
         indices.append(lista[0]-1)#para que primer valor sea el ultimo y se tome como autosuma
         to_val = tabla.iloc[indices,1:]#del uno para la derecha con el fin de evitar columna de indices de tabla
         ercol = totales_columna(to_val) 
-
+        # print(ercol)
         if ercol:
             if 'aritmetico' in errores:
                 errores['aritmetico']+=ercol['aritmetico']
             if 'aritmetico' not in errores:
                 errores['aritmetico'] = ercol['aritmetico']
-        
+       
     return errores
     
 
@@ -1660,7 +1660,6 @@ def totales_columna(df1):
             ins = lista[-1] #es el total
             lista.insert(0, ins)
             lista.pop(-1)
-            
             aritme = evaluador_suma(lista,f'columna {col}')
             if aritme:
                 if 'aritmetico' in errores:
@@ -2000,11 +1999,11 @@ def evaluador_suma(lista,indi):
         if type(total) != str:
             # print('llega',total,suma)
             if total != suma:
-                if total != 0 and suma > 0:
+                if total != 0 and suma >= 0:
                     errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}(Total = {total}vs Suma de desagregados = {suma})')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
-            
+                    
         return errores
     
     return
