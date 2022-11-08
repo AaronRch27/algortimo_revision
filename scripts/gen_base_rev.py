@@ -52,6 +52,7 @@ class aplicacion(tk.Frame):
         return objeto
     
     def rec(self,pregunta):
+        self.n_deprgunta = pregunta #esto se usa sobre todo en relaciones entre preguntas
         br = self.pack_slaves()#limpiar interfaz
         for val in br:
             val.destroy()
@@ -174,6 +175,25 @@ class aplicacion(tk.Frame):
             self.fin_suma = StringVar(self)
             #la funcion autoreferencial a esta
             self.sumas_de_numerales()
+        elif self.p_rel1.get() == 1 and self.base['preg_rel'][self.cont] =='P':
+            #variables control
+            #pregnta actual
+            self.columnas_pact = StringVar(self)
+            self.filas_pact = StringVar(self)
+            self.suma_pact = StringVar(self)
+            #pregunta a comparar (referente)
+            self.columnas_pref = StringVar(self)
+            self.filas_pref = StringVar(self)
+            self.suma_pref = StringVar(self)
+            #lista desplegable
+            self.pregunta_fuera_instr = StringVar(self)
+            #restantes para el diccionario
+            self.op_p_r = 0
+            self.op_p_r1 = StringVar(self)
+            self.comparar_p_r = ''
+            #funcion autoreferencial
+            self.preguntas_rel()
+            
         else:
             #cerrar ventanas de instrucciones y tablas
             # self.NV.destroy()
@@ -195,6 +215,99 @@ class aplicacion(tk.Frame):
             if self.cont > len(self.lista)-1:
                 self.cont = 0
             self.rec(self.lista[self.cont])
+    
+    def preguntas_rel(self):
+        #objeto pregunta actual
+        self.p_act = self.bp(self, self.n_deprgunta)
+        clasificadas = self.p_act.instruccio_clasificadas
+        self.ins_cons = [] #instrucciones de consistencia
+        for instruc in clasificadas:
+            if clasificadas[instruc] == 'consistencia':
+                self.ins_cons.append(instruc)
+        if self.ins_cons:
+            self.segundo_contador = 0 
+            self.iterar_instrucciones()
+           
+                    
+    def iterar_instrucciones(self):
+        self.w1 = tk.Toplevel(self)
+        self.w1.title('Preguntas relacionadas')
+        self.w1.geometry('500x500')
+        inst = tk.Label(self.w1,text=self.ins_cons[self.segundo_contador],wraplength=450)
+        inst.pack()
+        # op = 0 #op ya es self.op_p_r y se trata de una variable control en función previa
+        rev = self.ins_cons[self.segundo_contador].lower()
+        if 'igual' in rev:
+            self.op_p_r = 1
+
+        if 'menor' in rev:
+            self.op_p_r = 2
+
+        if 'mayor' in rev:
+            self.op_p_r = 3
+  
+        if self.op_p_r == 0:
+            #no se encontró forma de comparación, entonces solicitarla al usuario
+            #buscar definir self.op_p_r mediante otra funcion
+            iin = tk.Label(self.w1,text='Favor de indicar el tipo de comparación que se debe hacer: ')
+            iin.pack()
+            lista = ['Igual','Menor o igual','Mayor o igual']
+            despl = ttk.Combobox(self.w1,
+                                 state='readonly',
+                                 values = lista,
+                                 textvariable=self.op_p_r1)
+            despl.pack()
+            
+
+        if self.op_p_r > 0: 
+            comparar = self.pregunta_comparar(self.p_act.nombre,self.ins_cons[self.segundo_contador])#string con el nombre de la pregunta que se va a comparar
+        #comenzar a poner los widgets en la ventana
+        tk.Label(self.w1,text='Datos de pregunta actual').pack()
+        tk.Label(self.w1,text='Filas de interés (en números del 1 en adelante):').pack()
+        entrada1 = ttk.Entry(self.vv1,validate='key',
+                             textvariable = self.filas_pact)
+        entrada1.pack()
+        tk.Label(self.w1,text='Columnas de interés (en números del 1 en adelante):').pack()
+        entrada2 = ttk.Entry(self.vv1,validate='key',
+                             textvariable = self.columnas_pact)
+        entrada2.pack()
+        tk.Label(self.w1,text='¿Hay filas que se tienen que sumar?').pack()
+        entrada3 = ttk.Entry(self.vv1,validate='key',
+                             textvariable = self.suma_pact)
+        entrada3.pack()
+                          
+    @staticmethod
+    def pregunta_comparar(nombre,instruccion):
+        """
+        
+
+        Parameters
+        ----------
+        nombre : str, nombre de la pregunta
+
+        Returns
+        -------
+        str con el nombre de la pregunta a la que se tiene 
+        que hacer la comparacion
+
+        """
+        borrar = [',', ' ']
+        # print(instruccion)
+        if 'la pregunta' not in instruccion:#preguntas cuya suma no debe ser necesariamente igual a sus desagregados, sino simplemente el valor decada desgregado no debe ser mayor al del total
+            return 'misma' 
+        tx = instruccion.split('la pregunta')
+        tx1 = tx[1]
+        interes = tx1.split()
+        pregunta_c = interes[0]
+        if 'anterior' in pregunta_c:
+            nnn = nombre.split('.')
+            resta = int(nnn[1]) - 1
+            return f'{nnn[0]}.{resta}'
+        else:
+            pregunta_c = ''.join(c for c in pregunta_c if c not in borrar)
+            if pregunta_c.endswith('.'):
+                pregunta_c = pregunta_c[:-1]
+            return pregunta_c
     
     def sumas_de_numerales(self):
         self.vv1 = tk.Toplevel(self)
@@ -272,7 +385,7 @@ def recibir(cuestionario,libro):
     """
     base = {'preguntas':[],'blanco':[],'aritmetico':[],'suma_numeral':[],
             'espeficique':[],'errores_registro':[],'salto_preguntas':[],
-            'preguntas_relacionadas':[],'s_num_lis':[]
+            'preguntas_relacionadas':[],'s_num_lis':[],'preg_rel':[]
             }
     #primer paso es conseguir lista con nombres de preguntas
     # lista_preguntas = consg_p(cuestionario)

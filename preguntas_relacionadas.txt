@@ -1,0 +1,37 @@
+Elementos de preguntas relacionadas:
+	Hay instrucciones---aunque no siempre porque algunas quedan como instrucciones de apartado. 
+	Forma de las tablas desde la lectura del archivo
+
+Se busca obtener:
+	columna y fila a comparar
+		si es toda una columna, toda una fila, o la suma de algunas filas. De ambas preguntas.
+
+*******¿Las preguntas con varias tablas aún no están listas para este tipo de validación?*********
+
+
+Por lo tanto, al seleccionar que hay preguntas relacionadas:
+	Debe desplegar nueva pantalla con las instrucciones, si es que las ha detectado. 
+	Una pantalla por instrucción.
+	Para pregunta referente:
+		Un recuadro con columna o columnas a comparar
+		lo mismo pero con filas --- preguntar si es autosuma
+		un caracter para indicar que es toda la columna, o toda la fila
+		¿Hay que sumar filas?--- esto se hará para las columnas indicadas
+	Para pregunta a comparar:
+		Un recuadro con columna o columnas a comparar
+		lo mismo pero con filas --- preguntar si es autosuma
+		un caracter para indicar que es toda la columna, o toda la fila
+		¿Hay que sumar filas?--- esto se hará para las columnas indicadas
+
+
+Variable comparar es uno de los primeros argumntos que pasará al diccionario para la base de datos.
+	Esta variable contiene el nombre de la pregunta a la que hace referencia la instrucción de la pregunta actual;
+	los valores pueden ser el nombre, o la palabra "misma" que hace referencia a que la instrucción implica una
+	comparacion con la misma pregunta (casos en donde los desagregados, cada uno puede ser igual al total, haciendo que 
+	la suma de todos ellos pueda ser mayor o igual a lo que se reporta en el total).
+
+
+
+
+
+	
