@@ -87,16 +87,16 @@ class aplicacion(tk.Frame):
         #     # ll2.pack()
         # instrucciones.pack(fill = tk.BOTH, expand=True)
         # barra.config(command=instrucciones.yview)
-        if type(ob_pre.tablas) != str: #hay preguntas que no son tablas y se pasa una string aquí en vez del frame
-            for tabla in ob_pre.tablas:
-                self.NV1 = tk.Toplevel(self)
-                self.NV1.title('Contenido de pregunta')
-                barra = tk.Scrollbar(self.NV1,orient='horizontal')
-                barra.pack(side=tk.BOTTOM, fill=tk.X)
-                tab = tk.Text(self.NV1,xscrollcommand=barra.set,wrap=tk.NONE)#,width=100
-                tab.insert(tk.INSERT, ob_pre.tablas[tabla].to_string())
-                barra.config(command=tab.xview)
-                tab.pack()
+        # if type(ob_pre.tablas) != str: #hay preguntas que no son tablas y se pasa una string aquí en vez del frame
+        #     for tabla in ob_pre.tablas:
+        #         self.NV1 = tk.Toplevel(self)
+        #         self.NV1.title('Contenido de pregunta')
+        #         barra = tk.Scrollbar(self.NV1,orient='horizontal')
+        #         barra.pack(side=tk.BOTTOM, fill=tk.X)
+        #         tab = tk.Text(self.NV1,xscrollcommand=barra.set,wrap=tk.NONE)#,width=100
+        #         tab.insert(tk.INSERT, ob_pre.tablas[tabla].to_string())
+        #         barra.config(command=tab.xview)
+        #         tab.pack()
                 
         #encabezado de ventana con tipos de validacion
         l1 = tk.Label(self, text=f"Selecciona las validaciones que aplican para pregunta {pregunta}")
@@ -177,27 +177,35 @@ class aplicacion(tk.Frame):
             self.sumas_de_numerales()
         elif self.p_rel1.get() == 1 and self.base['preg_rel'][self.cont] =='P':
             #variables control
+            self.preg_rel_var = []#esta lista es la variable que va a condensar los diccionarios con la info de la spreguntas que se deben relacionar usando todas las variables definidas abajo
             #pregnta actual
             self.columnas_pact = StringVar(self)
             self.filas_pact = StringVar(self)
-            self.suma_pact = StringVar(self)
+            self.suma_pact = StringVar(self)#esta es bool si o no y de ella dependenden las variables de abajo
+            self.inicio_suma_pact = StringVar(self)
+            self.fin_suma_pact = StringVar(self)
             #pregunta a comparar (referente)
             self.columnas_pref = StringVar(self)
             self.filas_pref = StringVar(self)
-            self.suma_pref = StringVar(self)
-            #lista desplegable
-            self.pregunta_fuera_instr = StringVar(self)
+            self.suma_pref = StringVar(self)#bool y de ela derivan las de abajo
+            self.inicio_suma_pref = StringVar(self)
+            self.fin_suma_pref = StringVar(self)
+
             #restantes para el diccionario
             self.op_p_r = 0
             self.op_p_r1 = StringVar(self)
-            self.comparar_p_r = ''
+            self.op_p_r2 = StringVar(self)
+            self.op_p_r3 = StringVar(self)
+            self.op_p_r4 = StringVar(self)
+            self.op_p_r5 = StringVar(self)
+            self.comparar = ''
             #funcion autoreferencial
             self.preguntas_rel()
             
         else:
             #cerrar ventanas de instrucciones y tablas
             # self.NV.destroy()
-            self.NV1.destroy()
+            # self.NV1.destroy()
             #almacenar validaciones en base
             copia = self.base.copy()
             copia['blanco'][self.cont] = self.blanco.get()
@@ -224,18 +232,145 @@ class aplicacion(tk.Frame):
         for instruc in clasificadas:
             if clasificadas[instruc] == 'consistencia':
                 self.ins_cons.append(instruc)
+        
         if self.ins_cons:
             self.segundo_contador = 0 
             self.iterar_instrucciones()
-           
+        else:
+            self.iterar_sin_instr()
+            
+    def iterar_sin_instr(self):
+        self.w11 = tk.Toplevel(self)
+        self.w11.title('Preguntas relacionadas')
+        self.w11.geometry('500x700')
+        inst = tk.Label(self.w11,text='No detecto instrucciones de comparación, pero puedes agregar una comparación entre preguntas llenando los siguientes datos: ',
+                        wraplength=450)
+        inst.pack()
+        #variable control op r se vuelve stringvar
+        self.op_p_r = StringVar()
+        tk.Label(self.w11,text='Selecciona el tipo de comparación: ').pack()
+        lista = ['Igual','Menor o igual','Mayor o igual']
+        entrada1 = ttk.Combobox(self.w11,
+                             state='readonly',
+                             values = lista,
+                             textvariable=self.op_p_r)
+        entrada1.pack()
+        #seleciconar pregunta a comparar
+        tk.Label(self.w11,text='Selecciona la pregunta con la que se debe comparar: ').pack()
+        entrada2 = ttk.Combobox(self.w11,
+                             state='readonly',
+                             values = self.lista,
+                             textvariable=self.op_p_r5)
+        entrada2.pack()
+        self.w1 = tk.Frame(self.w11)#frame de prgeunta actual
+        self.w1.pack(pady=(30,0))
+        tk.Label(self.w1,text='Datos de pregunta actual').pack()
+        tk.Label(self.w1,text='Filas de interés (en números del 1 en adelante):').pack()
+        entrada1 = ttk.Entry(self.w1,validate='key',
+                             textvariable = self.filas_pact)
+        entrada1.pack()
+        tk.Label(self.w1,text='Columnas de interés (en números del 1 en adelante):').pack()
+        entrada2 = ttk.Entry(self.w1,validate='key',
+                             textvariable = self.columnas_pact)
+        entrada2.pack()
+        tk.Label(self.w1,text='¿Hay filas que se tienen que sumar?').pack()
+        lista = ['Sí','No']
+        entrada3 = ttk.Combobox(self.w1,
+                             state='readonly',
+                             values = lista,
+                             textvariable=self.op_p_r2)
+        entrada3.pack()
+        #estos quedaron como fuciones dentro de la funcion debido a que así fue más sencillo enlazar las variables de control que si solo se hubiese hecho una función aparte, pensando en utilizarla también para el apartado siguiente. 
+        def llamado_prel_bool(evento):
+            var = evento.widget.get()
+            
+            if var == 'Sí':
+                if len(self.w1.pack_slaves())==7:
+                    
+                    L1 = tk.Label(self.w1,text='Indica el número de fila donde inicia la suma:')
+                    L1.pack()
+                    entrada4 = ttk.Entry(self.w1,validate='key',
+                                         textvariable = self.inicio_suma_pact)
+                    entrada4.pack()
+                    L2 = tk.Label(self.w1,text='Indica el número de fila donde termina la suma:')
+                    L2.pack()
+                    entrada5 = ttk.Entry(self.w1,validate='key',
+                                         textvariable = self.fin_suma_pact)
+                    entrada5.pack()
+            if var =='No':
+                li = self.w1.pack_slaves()
+                if len(li)>7:
+                    for widget in li[7:]:
+                        widget.destroy()
+                    
+        entrada3.bind("<<ComboboxSelected>>", llamado_prel_bool)
+    
+        #copia para pregunta referente
+        self.w2 = tk.Frame(self.w11)#frame de prgeunta actual
+        self.w2.pack(pady=(50, 0))
+        tk.Label(self.w2,text='Datos de pregunta a comparar').pack()
+        tk.Label(self.w2,text='Filas de interés (en números del 1 en adelante):').pack()
+        entrada1 = ttk.Entry(self.w2,validate='key',
+                             textvariable = self.filas_pref)
+        entrada1.pack()
+        tk.Label(self.w2,text='Columnas de interés (en números del 1 en adelante):').pack()
+        entrada2 = ttk.Entry(self.w2,validate='key',
+                             textvariable = self.columnas_pref)
+        entrada2.pack()
+        tk.Label(self.w2,text='¿Hay filas que se tienen que sumar?').pack()
+        lista = ['Sí','No']
+        entrada3 = ttk.Combobox(self.w2,
+                             state='readonly',
+                             values = lista,
+                             textvariable=self.op_p_r3)
+        entrada3.pack()
+        
+        def llamado_prel_bool2(evento):
+            var = evento.widget.get()
+            
+            if var == 'Sí':
+                if len(self.w2.pack_slaves())==7:
+                    
+                    L1 = tk.Label(self.w2,text='Indica el número de fila donde inicia la suma:')
+                    L1.pack()
+                    entrada4 = ttk.Entry(self.w2,validate='key',
+                                         textvariable = self.inicio_suma_pref)
+                    entrada4.pack()
+                    L2 = tk.Label(self.w2,text='Indica el número de fila donde termina la suma:')
+                    L2.pack()
+                    entrada5 = ttk.Entry(self.w2,validate='key',
+                                         textvariable = self.fin_suma_pref)
+                    entrada5.pack()
+            if var =='No':
+                li = self.w2.pack_slaves()
+                if len(li)>7:
+                    for widget in li[7:]:
+                        widget.destroy()
+                    
+        entrada3.bind("<<ComboboxSelected>>", llamado_prel_bool2)
+        #finalmente un botón para por si hay otras instrucciones o comparaciones adicionales a lo detectado por el algoritmo.
+        tk.Label(self.w11,text='¿Hay otra comparación que se deba hacer?').pack()
+        lista = ['Sí','No']
+        ent = ttk.Combobox(self.w11,
+                              state='readonly',
+                              values = lista,
+                              textvariable=self.op_p_r4)
+        ent.pack()
+        boton = tk.Button(self.w11,
+                           text='Continuar',
+                           command = self.continuar)
+        boton.pack()
                     
     def iterar_instrucciones(self):
-        self.w1 = tk.Toplevel(self)
-        self.w1.title('Preguntas relacionadas')
-        self.w1.geometry('500x500')
-        inst = tk.Label(self.w1,text=self.ins_cons[self.segundo_contador],wraplength=450)
+        self.w11 = tk.Toplevel(self)
+        self.w11.title('Preguntas relacionadas')
+        self.w11.geometry('500x700')
+        
+        inst = tk.Label(self.w11,text=self.ins_cons[self.segundo_contador],wraplength=450)
         inst.pack()
         # op = 0 #op ya es self.op_p_r y se trata de una variable control en función previa
+        self.w1 = tk.Frame(self.w11)#frame de prgeunta actual
+        self.w1.pack()
         rev = self.ins_cons[self.segundo_contador].lower()
         if 'igual' in rev:
             self.op_p_r = 1
@@ -249,33 +384,185 @@ class aplicacion(tk.Frame):
         if self.op_p_r == 0:
             #no se encontró forma de comparación, entonces solicitarla al usuario
             #buscar definir self.op_p_r mediante otra funcion
-            iin = tk.Label(self.w1,text='Favor de indicar el tipo de comparación que se debe hacer: ')
-            iin.pack()
-            lista = ['Igual','Menor o igual','Mayor o igual']
-            despl = ttk.Combobox(self.w1,
-                                 state='readonly',
-                                 values = lista,
-                                 textvariable=self.op_p_r1)
-            despl.pack()
-            
+            # iin = tk.Label(self.w11,text='Favor de indicar el tipo de comparación que se debe hacer: ')
+            # iin.pack()
+            # lista = ['Igual','Menor o igual','Mayor o igual']
+            # despl = ttk.Combobox(self.w1,
+            #                      state='readonly',
+            #                      values = lista,
+            #                      textvariable=self.op_p_r1)
+            # despl.pack()
+            self.w11.destroy()
+            self.iterar_sin_instr()
+            return
 
         if self.op_p_r > 0: 
-            comparar = self.pregunta_comparar(self.p_act.nombre,self.ins_cons[self.segundo_contador])#string con el nombre de la pregunta que se va a comparar
+            self.comparar = self.pregunta_comparar(self.p_act.nombre,self.ins_cons[self.segundo_contador])#string con el nombre de la pregunta que se va a comparar
         #comenzar a poner los widgets en la ventana
         tk.Label(self.w1,text='Datos de pregunta actual').pack()
         tk.Label(self.w1,text='Filas de interés (en números del 1 en adelante):').pack()
-        entrada1 = ttk.Entry(self.vv1,validate='key',
+        entrada1 = ttk.Entry(self.w1,validate='key',
                              textvariable = self.filas_pact)
         entrada1.pack()
         tk.Label(self.w1,text='Columnas de interés (en números del 1 en adelante):').pack()
-        entrada2 = ttk.Entry(self.vv1,validate='key',
+        entrada2 = ttk.Entry(self.w1,validate='key',
                              textvariable = self.columnas_pact)
         entrada2.pack()
         tk.Label(self.w1,text='¿Hay filas que se tienen que sumar?').pack()
-        entrada3 = ttk.Entry(self.vv1,validate='key',
-                             textvariable = self.suma_pact)
+        lista = ['Sí','No']
+        entrada3 = ttk.Combobox(self.w1,
+                             state='readonly',
+                             values = lista,
+                             textvariable=self.op_p_r2)
         entrada3.pack()
-                          
+        #estos quedaron como fuciones dentro de la funcion debido a que así fue más sencillo enlazar las variables de control que si solo se hubiese hecho una función aparte, pensando en utilizarla también para el apartado siguiente. 
+        def llamado_prel_bool(evento):
+            var = evento.widget.get()
+            
+            if var == 'Sí':
+                if len(self.w1.pack_slaves())==7:
+                    
+                    L1 = tk.Label(self.w1,text='Indica el número de fila donde inicia la suma:')
+                    L1.pack()
+                    entrada4 = ttk.Entry(self.w1,validate='key',
+                                         textvariable = self.inicio_suma_pact)
+                    entrada4.pack()
+                    L2 = tk.Label(self.w1,text='Indica el número de fila donde termina la suma:')
+                    L2.pack()
+                    entrada5 = ttk.Entry(self.w1,validate='key',
+                                         textvariable = self.fin_suma_pact)
+                    entrada5.pack()
+            if var =='No':
+                li = self.w1.pack_slaves()
+                if len(li)>7:
+                    for widget in li[7:]:
+                        widget.destroy()
+                    
+        entrada3.bind("<<ComboboxSelected>>", llamado_prel_bool)
+    
+        #copia para pregunta referente
+        self.w2 = tk.Frame(self.w11)#frame de prgeunta actual
+        self.w2.pack(pady=(50, 0))
+        tk.Label(self.w2,text='Datos de pregunta a comparar').pack()
+        tk.Label(self.w2,text='Filas de interés (en números del 1 en adelante):').pack()
+        entrada1 = ttk.Entry(self.w2,validate='key',
+                             textvariable = self.filas_pref)
+        entrada1.pack()
+        tk.Label(self.w2,text='Columnas de interés (en números del 1 en adelante):').pack()
+        entrada2 = ttk.Entry(self.w2,validate='key',
+                             textvariable = self.columnas_pref)
+        entrada2.pack()
+        tk.Label(self.w2,text='¿Hay filas que se tienen que sumar?').pack()
+        lista = ['Sí','No']
+        entrada3 = ttk.Combobox(self.w2,
+                             state='readonly',
+                             values = lista,
+                             textvariable=self.op_p_r3)
+        entrada3.pack()
+        
+        def llamado_prel_bool2(evento):
+            var = evento.widget.get()
+            
+            if var == 'Sí':
+                if len(self.w2.pack_slaves())==7:
+                    
+                    L1 = tk.Label(self.w2,text='Indica el número de fila donde inicia la suma:')
+                    L1.pack()
+                    entrada4 = ttk.Entry(self.w2,validate='key',
+                                         textvariable = self.inicio_suma_pref)
+                    entrada4.pack()
+                    L2 = tk.Label(self.w2,text='Indica el número de fila donde termina la suma:')
+                    L2.pack()
+                    entrada5 = ttk.Entry(self.w2,validate='key',
+                                         textvariable = self.fin_suma_pref)
+                    entrada5.pack()
+            if var =='No':
+                li = self.w2.pack_slaves()
+                if len(li)>7:
+                    for widget in li[7:]:
+                        widget.destroy()
+                    
+        entrada3.bind("<<ComboboxSelected>>", llamado_prel_bool2)
+        #finalmente un botón para por si hay otras instrucciones o comparaciones adicionales a lo detectado por el algoritmo.
+        if self.segundo_contador+1==len(self.ins_cons):
+            tk.Label(self.w11,text='¿Hay otra comparación que se deba hacer?').pack()
+            lista = ['Sí','No']
+            ent = ttk.Combobox(self.w11,
+                                  state='readonly',
+                                  values = lista,
+                                  textvariable=self.op_p_r4)
+            ent.pack()
+        boton = tk.Button(self.w11,
+                           text='Continuar',
+                           command = self.continuar)
+        boton.pack()
+        
+    def continuar(self):
+        "esta funcion es para reclectar todos los valores detectados de preguntas relacionadas"
+        #se hace la extraccion aqui
+        recolector = {}
+        if self.comparar:#si hay esta variable es porque fue en funcion de iterar instrucciones
+            recolector['pregunta_ref'] = self.comparar
+            recolector['operacion'] = self.op_p_r
+            recolector['filas_act'] = [self.filas_pact.get()]
+            recolector['columnas_act'] = [self.columnas_pact.get()]
+            if self.op_p_r2.get()=='Sí':
+                recolector['suma_numeral_act'] = [self.inicio_suma_pact.get(),self.fin_suma_pact.get()]
+            if self.op_p_r2.get()=='No':
+                recolector['suma_numeral_act'] = []
+            recolector['filas_ref'] = [self.filas_pref.get()]
+            recolector['columnas_ref'] = [self.columnas_pref.get()]
+            if self.op_p_r3.get()=='Sí':
+                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get(),self.fin_suma_pref.get()]
+            if self.op_p_r3.get()=='No':
+                recolector['suma_numeral_ref'] = []
+                
+        if not self.comparar:#si se cumple esto entonces viene de funcion iterar sin instrucciones
+            recolector['pregunta_ref'] = self.op_p_r5.get()
+            #convertir valor de operacion a numero porque esta en string
+            op = self.op_p_r.get()
+            if op == 'Igual':
+                a = 1
+            if op == 'Menor o igual':
+                a = 2
+            if op == 'Mayor o igual':
+                a = 3
+            recolector['operacion'] = a
+            recolector['filas_act'] = [self.filas_pact.get()]
+            recolector['columnas_act'] = [self.columnas_pact.get()]
+            if self.op_p_r2.get()=='Sí':
+                recolector['suma_numeral_act'] = [self.inicio_suma_pact.get(),self.fin_suma_pact.get()]
+            if self.op_p_r2.get()=='No':
+                recolector['suma_numeral_act'] = []
+            recolector['filas_ref'] = [self.filas_pref.get()]
+            recolector['columnas_ref'] = [self.columnas_pref.get()]
+            if self.op_p_r3.get()=='Sí':
+                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get(),self.fin_suma_pref.get()]
+            if self.op_p_r3.get()=='No':
+                recolector['suma_numeral_ref'] = []
+                
+        self.preg_rel_var.append(recolector)
+            
+        #Se avanza a otra instrucción
+        if self.ins_cons:
+            if self.segundo_contador+1<len(self.ins_cons):
+                self.segundo_contador += 1 
+                self.iterar_instrucciones()
+            elif self.op_p_r4.get()=='Sí':
+                self.iterar_sin_instr()
+                
+            else:
+                self.w11.destroy()
+                self.base['preg_rel'][self.cont] = self.preg_rel_var
+                self.nex()
+        else:
+            if self.op_p_r4.get()=='Sí':
+                self.iterar_sin_instr()
+            else:
+                self.w11.destroy()
+                self.base['preg_rel'][self.cont] = self.preg_rel_var
+                self.nex()
+                       
     @staticmethod
     def pregunta_comparar(nombre,instruccion):
         """
