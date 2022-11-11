@@ -67,6 +67,7 @@ class aplicacion(tk.Frame):
         self.p_relcol = StringVar(self) #bool cero o uno
         #despliegue de ventanas con instrucciones y tablas de pregunta
         ob_pre = self.bp(self,pregunta) #objeto pregunta
+        #las partes comentadas acontinuacion se deshabilitaron por practicidad en la ejecucion de la aplicacion. Eran lineas para mostrar instrucciones y tablas, pero es incómodo para navegar entre preguntas. 
         # self.NV = tk.Toplevel(self)
         # self.NV.title('Pregunta e instrucciones')
         # self.NV.geometry('800x500')

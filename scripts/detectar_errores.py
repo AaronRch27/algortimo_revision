@@ -98,16 +98,16 @@ def iterar_cuestionario(cuestionario,base):
                 if type(tablas[tabla]) == str:
                     continue
                 #Lo primero es ver si la tabla debe ser saltada, por alguna relación con preguntas anteriores
-                if validaciones['salto_preguntas']:
-                    #aun pendiente por cóom ejecutar esta validación
-                    print('debe saltar')#solo un indicador, borrar después
+                # if validaciones['salto_preguntas']:
+                #     #aun pendiente por cóom ejecutar esta validación
+                #     print('debe saltar')#solo un indicador, borrar después
                     
                     #aquí alguna funcion para verificar esos saltos de preguntas  y comprobación en blanco
             #     #comprobar si la tabla está toda en blanco
             #     t1 = tabla_vacia(tablas[tabla])
             #     if not t1:#si está vacía la salta
             #         continue
-                if validaciones['aritmetico']:  
+                if validaciones['aritmetico']=='1':  
                     
                     df = tablas[tabla].copy()#con copia para no afectar el frame original
                     ndf = quitar_sinonosabe(df)
@@ -127,7 +127,7 @@ def iterar_cuestionario(cuestionario,base):
                             aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
                             if aritmeticos:
                                 errores[pregunta] = aritmeticos
-                if validaciones['blanco']:
+                if validaciones['blanco']=='1':
                 #ver si hay espacios en blanco y tomar en cuenta excepciones sinonosabe, Usos de X en no aplica etc
                 #validación para todas las preguntas de si no no se sabe.
                 #hacer una para blancos exclusivamente
@@ -150,7 +150,8 @@ def iterar_cuestionario(cuestionario,base):
                             errores[pregunta] = sinon
                         
                 #resto de validaciones pendientes:
-                if validaciones['suma_numeral']:
+                if validaciones['suma_numeral']=='1':
+                    
                     sumas = suma_numeral(tablas[tabla],validaciones['s_num_lis'])
                     if sumas:
                         if pregunta in errores:
@@ -167,30 +168,26 @@ def iterar_cuestionario(cuestionario,base):
                     
                 # if validaciones['errores_registro']:#esta validacion no se desarrollará ya que existe en aritmético, y esto es más eficiente así ya que hay columnas fuera de validaciones aritmética que aceptan otro valores y en ellas no conviene esto.
                     
-                # if validaciones['preguntas_relacionadas']:
+                if validaciones['preguntas_relacionadas']=='1':
                     #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
-                    # print('hasta aquie vba bien ',pregunta)
-                    # modo excepcion:
-        
-                    # try:
-                    #     consist = consistencia(cuestionario,cuestionario[llave][pregunta]) 
-                    # except:
-                    #     consist = {'Consistencia':['Las instrucciones de consistencia escapan a la capacidad actual de validación']}
-                    #modo localizar errores:
-                    # consist = consistencia(cuestionario,cuestionario[llave][pregunta])  
-                    # if consist:
+                    datos = eval(validaciones['preg_rel'])#arreglar un poco
+                    consist = consistencia(cuestionario,
+                                           cuestionario[llave][pregunta],
+                                           datos)  
+                    # print(consist)
+                    if consist:
                         
-                    #     if pregunta in errores:
-                    #         try:
-                    #             errores[pregunta].append(consist)
-                    #         except:#si existe eror previo puede que no sea lista sin dict
-                    #             for k in consist:
-                    #                 if k in errores[pregunta]:
-                    #                     errores[pregunta][k] += consist[k]
-                    #                 if k not in errores[pregunta]:
-                    #                     errores[pregunta][k] = consist[k]
-                    #     if pregunta not in errores:
-                    #         errores[pregunta] = consist
+                        if pregunta in errores:
+                            try:
+                                errores[pregunta].append(consist)
+                            except:#si existe eror previo puede que no sea lista sin dict
+                                for k in consist:
+                                    if k in errores[pregunta]:
+                                        errores[pregunta][k] += consist[k]
+                                    if k not in errores[pregunta]:
+                                        errores[pregunta][k] = consist[k]
+                        if pregunta not in errores:
+                            errores[pregunta] = consist
             
     return errores, censo
    
@@ -650,7 +647,7 @@ def tabla_vacia(df):
         print('pregunta con tabla vacia')
         return
     
-def consistencia(cuestionario,pregunta):
+def consistencia(cuestionario,pregunta,datos):
     """
     
 
@@ -661,7 +658,13 @@ def consistencia(cuestionario,pregunta):
         para poder comparar relaciones entre ellas.
     pregunta : objeto pregunta
         La pregunta del cuestionario que será comparada con alguna otra.
-
+    datos : list. Es una lista que contiene un diccionario por comparación
+        ya sean instrucciones u comparaciones manuales. Los diccionarios
+        contienen todas las variables necesarias para hacer la extracción
+        de los datos en tablas, y compararlos directamente.El o los
+        diccionarios están integrados de la siguiente manera:
+            {'pregunta_ref': '1.5.-', 'operacion': 2, 'filas_act': ['2'], 'columnas_act': ['1,2,3'], 'suma_numeral_act': [], 'filas_ref': ['4,5'], 'columnas_ref': ['2,3,4'], 'suma_numeral_ref': ['4', '5']}
+            Los datos que contiene cada llave solo son para ejemplificar
     Returns
     -------
     errores. Dict. Regresa un diccionario con errores encontrados en la
@@ -669,124 +672,153 @@ def consistencia(cuestionario,pregunta):
 
     """
     errores = {}
-    #primer paso es filtrado de instrucciones clasificadas
-    clasificadas = pregunta.instruccio_clasificadas
-    ins_cons = [] #instrucciones de consistencia
-    for instruc in clasificadas:
-        if clasificadas[instruc] == 'consistencia':
-            ins_cons.append(instruc)
-            
-    if not ins_cons:#en caos de no existir no tiene caso seguir con esta validación
-        return
-    #segundo paso, otro filtro de instrucciones de comparacion mayor menor o igual
-
-    for instru in ins_cons:
-        # try:
-        # print(instru)
-        op = 0
-        rev = instru.lower()
-        if 'igual' in rev:
-            op = 1
-
-        if 'menor' in rev:
-            op = 2
-
-        if 'mayor' in rev:
-            op = 3
-  
-        if op == 0:
-            # errores['Consistencia'] = [f'Instrucción "{instru[:35]}..." no se pudo validar,revisar ']
-            pass
-        
-        if op > 0: 
-            comparar = pregunta_comparar(pregunta.nombre,instru)#string con el nombre de la pregunta que se va a comparar
-
-            if comparar == 'misma':#La validacion es con la misma pregunta
-                tablas = pregunta.tablas
+    #iterar por cada comparacion(diccionario en datos)
+    for comparacion in datos:
+        # if comparacion['pregunta_ref'][0].isdigit():
+        #     comparacion['pregunta_ref'] += '.-'
+        for k in comparacion:
+            if type(comparacion[k])==list:
                 
-                for tabla in tablas:
-                    relmisma = relaciones_mis(tablas[tabla])
-                    if relmisma:
-                        if 'Consistencia' in errores:
-                            errores['Consistencia'] += relmisma['Consistencia']
-                        if 'Consistencia' in errores:
-                            errores['Consistencia'] = relmisma['Consistencia']
-                        errores['borraAr'] = 1
-                        return errores
-                    if not relmisma:
-                        
-                        errores['borraAr'] = 1
-                        return errores
-        #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
-            pregunta_c = buscar_pregunta(cuestionario,comparar) #objeto pregunta
-            if pregunta_c == 'No':#agregar advertencia para errores
+                if comparacion[k]:
+                    sep = comparacion[k][0].split(',')
+                    if sep[0] != 'todas':
+                        comparacion[k]=[int(x) for x in sep]
 
-                if 'Consistencia' in errores:
-                    errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar)
-                else:
-                    errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar]
-            else:#analizar las tablas de cada pregunta 
-                #comprobar que solo tienen una tabla
-                if len(pregunta_c.tablas) == 1 and len(pregunta.tablas) == 1:
-                    tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
-                    tablaC = pregunta_c.tablas[1]
-                    # compatible = analizarT(tablaA,tablaC)
-                    # ccompa = 'si' if compatible['p_act'] == [0] and compatible['p_comp'] == [0] else 'no'
-                    compatible = analizar_tex_instr(tablaA,tablaC,instru,pregunta.encabezado_tabla,pregunta_c.encabezado_tabla)
-                    if not compatible:
-                        
-                        #qui va llamado a funcion para interpretar el texto en el sentido de ver nombres de columnas o numerales según la instrucción
-                        # compatible = analizar_tex_instr(tablaA,tablaC,instru)
-                        # if not compatible:
-                        if 'Consistencia' in errores:
-                            errores['Consistencia'].append('No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas')
-                            continue
-                        else:
-                            errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparar+' por incompatibilidad en tablas']
-                            continue
-                    #de llegar aquí, entonces sí hay compatibilidad
-                    # print(compatible)
-                    #conseguir los valores de la tabla en pregunta actual
-                    valor_conseguir_p_actual = compatible['rel'][0]
-                    instruc_ambas = rev.split('igual') #general lista con dos elementos, el priemro refiere a la instruccion de la pregunta actual y el segundo a lo que se busca en la pregunta a comparar   
-                    tipo_val_pa = analizarIns(instruc_ambas[0],rev)
-                    if pregunta.T_tip == 'index' and 0 in compatible['p_act']:
-                        compatible['p_act'].remove(0)
-                        
-                    pa_val = lista_valores(tablaA,
-                                           pregunta.autosuma,
-                                           tipo_val_pa,compatible['p_act'],
-                                           valor_conseguir_p_actual)
+        if comparacion['pregunta_ref'] == 'misma':#La validacion es con la misma pregunta
+            tablas = pregunta.tablas
+            
+            for tabla in tablas:
+                relmisma = relaciones_mis(tablas[tabla])
+                if relmisma:
+                    if 'Consistencia' in errores:
+                        errores['Consistencia'] += relmisma['Consistencia']
+                    if 'Consistencia' in errores:
+                        errores['Consistencia'] = relmisma['Consistencia']
+                    errores['borraAr'] = 1
+                    
+                if not relmisma:
+                    
+                    errores['borraAr'] = 1
+            continue                    
+    #aquí entonces se van a tomar las tablas de ambas preguntas y se hará un análisis de qué se puede comparar de acuerdo a nombres de columnas y de fila index de pregunta
+        pregunta_c = buscar_pregunta(cuestionario,comparacion['pregunta_ref']) #objeto pregunta
         
-                    #para conseguir valores de pregunta a comparar    
-                    valor_conseguir_p_comp = compatible['rel'][1]
-                    tipo_val_pc = analizarIns(instruc_ambas[1],rev)
-                    if pregunta_c.T_tip == 'index' and 0 in compatible['p_comp']:
-                        compatible['p_comp'].remove(0)
-                    pc_val = lista_valores(tablaC,
-                                           pregunta_c.autosuma,
-                                           tipo_val_pc,compatible['p_comp'],
-                                           valor_conseguir_p_comp)
-                    #comparar ambas listas según su operación
-                    # print(pa_val,pc_val)
-                    err = comparacion_consistencia(op,pa_val,pc_val,comparar)
-                    if err:
-                        if 'Consistencia' in errores:
-                            errores['Consistencia'] += err['Consistencia']
-                            continue
-                        else:
-                            errores = err
-                            continue
-        # except:
-        #     if 'Consistencia' in errores:
-        #         errores['Consistencia'].append(f'Instrucción "{instru}" no pudo ser validada.')
-        #         continue
-        #     else:
-        #         errores['Consistencia'] = [f'Instrucción "{instru}" no pudo ser validada.']
-        #         continue
-                #algo distinto para más de una tabla
+        if pregunta_c == 'No':#agregar advertencia para errores
+
+            if 'Consistencia' in errores:
+                errores['Consistencia'].append('No se pudo comparar con pregunta '+comparacion['pregunta_ref'])
+            else:
+                errores['Consistencia'] = ['No se pudo comparar con pregunta '+comparacion['pregunta_ref']]
+        else:#analizar las tablas de cada pregunta 
+            
+            tablaA = pregunta.tablas[1]#la numeracion de tablas inicia desde 1
+            tablaC = pregunta_c.tablas[1]
+            #conseguir los valores de la tabla en pregunta actual
+            #pa val y pc val son listas de listas
+            pa_val = extraer_lista(tablaA,
+                                   comparacion['filas_act'],
+                                   comparacion['columnas_act'],
+                                   comparacion['suma_numeral_act'],
+                                   pregunta.tipo_T)
+
+            #para conseguir valores de pregunta a comparar    
+
+            pc_val = extraer_lista(tablaC,
+                                   comparacion['filas_ref'],
+                                   comparacion['columnas_ref'],
+                                   comparacion['suma_numeral_ref'],
+                                   pregunta_c.tipo_T)
+            #comparar ambas listas según su operación
+            # print(pa_val,pc_val)
+            c = 0
+            for lista in pa_val:
+                
+                err = comparacion_consistencia(comparacion['operacion'],
+                                               lista,
+                                               pc_val[c],
+                                               comparacion['pregunta_ref'])
+                if err:
+                    if 'Consistencia' in errores:
+                        errores['Consistencia'] += err['Consistencia']
+                    else:
+                        errores = err
+                c += 1
+ 
         
     return errores
+
+def extraer_lista(tabla,filas,columnas,suma,tipotabla):
+    "funcion que extrae una lista de una tabla de acuerdo a las filas y columnas especificadas, así como si hay que sumar algunas filas"
+    lista = []
+    #filas, columnas y suma son listas y hacen referencia a index pero hay que restarles 1 debido a que su numeración por instrucciones inicia en 1 y no de cero como es el conteo en python
+    if type(filas[0]) != str:#para descartar que sean todas las filas de una o unas columas
+        filasN = [x-1 for x in filas]
+    if type(filas[0])==str:
+        if filas[0].lower()=='todas':
+            filasN = 'todas'
+    columnasN = [x-1 for x in columnas]
+    #si es no tabla no hay sumas y necesita tratamiento especial
+    if tipotabla == 'NT_Desagregados':
+        lista = []
+        if type(filasN)==str:
+            for colum in columnasN:#dificlmente se usaráel else de esta condicional
+                l = list(tabla.iloc[:,colum])
+                l = [l[-1]]+l#pasar el último al principio
+                l.pop()
+                lista.append(l)
+        else:
+            for fila in filasN:
+                lista.append(list(tabla.iloc[fila,columnasN]))
+        
+        return lista
+    #comprobar si hay algo que se deba sumar
+    if suma:
+        inicio = suma[0]-1
+        fin = suma[1] #a este no se le quita uno porque como se va a un range, en realidad se toma el penultimo valor entonces ahí se hace la resta automáticamente. Ejemplo, si es 8, llegaría hasta el 7 la iteracion
+        ldl = []
+        res_s = []
+        for i in range(inicio,fin):
+            lis = list(tabla.iloc[i,columnas])
+            ldl.append(lis)
+        c = 0
+        for val in ldl[0]:#por valor en la primera lista
+            agregar = val
+            na = 0
+            ns = 0
+            if type(val) == str:#por si son na o ns
+                vv = val.lower()
+                if vv=='na':
+                    na = 1
+                if vv=='ns':
+                    ns = 1
+                agregar = 0
+            for lis in ldl[1:]:#iterar resto de listas para sacar sus valores respectivos y sumarlos
+                if type(lis[c])==str:
+                    vv = lis.lower()
+                    if vv=='na':
+                        na = 1
+                    if vv=='ns':
+                        ns = 1 
+                else:#es int o float
+                    agregar += lis[c]
+            if agregar == 0 and na > 0:
+                res_s.append('NA')
+            if agregar == 0 and ns > 0:
+                res_s.append('NS')
+            if agregar > 0:
+                res_s.append(agregar)
+            c += 1
+        lista.append(res_s)
+    
+    else:
+        if type(filasN)==str:
+            for colum in columnasN:
+                lista.append(list(tabla.iloc[:,colum]))
+        else:
+            for fila in filasN:
+                lista.append(list(tabla.iloc[fila,columnasN]))
+            
+    return lista
 
 def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
     "t1 y 2 son dataframes, tx es string instruccion. Regresa dict con filas o columnas compatibles(su indice)"    
