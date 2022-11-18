@@ -107,7 +107,7 @@ def iterar_cuestionario(cuestionario,base):
             #     t1 = tabla_vacia(tablas[tabla])
             #     if not t1:#si está vacía la salta
             #         continue
-                if validaciones['aritmetico']=='1':  
+                if validaciones['aritmetico']=='1' or validaciones['aritmetico']==1:  
                     
                     df = tablas[tabla].copy()#con copia para no afectar el frame original
                     ndf = quitar_sinonosabe(df)
@@ -127,7 +127,7 @@ def iterar_cuestionario(cuestionario,base):
                             aritmeticos = val_delitos(ntab,cuestionario[llave][pregunta],tabla)
                             if aritmeticos:
                                 errores[pregunta] = aritmeticos
-                if validaciones['blanco']=='1':
+                if validaciones['blanco']=='1' or validaciones['blanco']==1:
                 #ver si hay espacios en blanco y tomar en cuenta excepciones sinonosabe, Usos de X en no aplica etc
                 #validación para todas las preguntas de si no no se sabe.
                 #hacer una para blancos exclusivamente
@@ -150,7 +150,7 @@ def iterar_cuestionario(cuestionario,base):
                             errores[pregunta] = sinon
                         
                 #resto de validaciones pendientes:
-                if validaciones['suma_numeral']=='1':
+                if validaciones['suma_numeral']=='1' or validaciones['suma_numeral']==1:
                     
                     sumas = suma_numeral(tablas[tabla],validaciones['s_num_lis'])
                     if sumas:
@@ -168,9 +168,9 @@ def iterar_cuestionario(cuestionario,base):
                     
                 # if validaciones['errores_registro']:#esta validacion no se desarrollará ya que existe en aritmético, y esto es más eficiente así ya que hay columnas fuera de validaciones aritmética que aceptan otro valores y en ellas no conviene esto.
                     
-                if validaciones['preguntas_relacionadas']=='1':
+                if validaciones['preguntas_relacionadas']=='1' or validaciones['preguntas_relacionadas']==1:
                     #a continuacion, se buscan los errores por instrucciones de preguntas --hasta ahora solo de relaciones entre preguntas(consistencia)
-                    datos = eval(validaciones['preg_rel'])#arreglar un poco
+                    datos = eval(validaciones['preg_rel'])#arreglar un poco/pasar a formato de diccionario porque está en string todo
                     consist = consistencia(cuestionario,
                                            cuestionario[llave][pregunta],
                                            datos)  
@@ -681,7 +681,7 @@ def consistencia(cuestionario,pregunta,datos):
                 
                 if comparacion[k]:
                     sep = comparacion[k][0].split(',')
-                    if sep[0] != 'todas':
+                    if sep[0] != 'todas' and sep[0] != 'C':
                         comparacion[k]=[int(x) for x in sep]
 
         if comparacion['pregunta_ref'] == 'misma':#La validacion es con la misma pregunta
@@ -756,7 +756,13 @@ def extraer_lista(tabla,filas,columnas,suma,tipotabla):
     if type(filas[0])==str:
         if filas[0].lower()=='todas':
             filasN = 'todas'
-    columnasN = [x-1 for x in columnas]
+    
+    if type(columnas[0]) != str:#para descartar que sean todas las filas de una o unas columas
+        columnasN = [x-1 for x in columnas]
+    if type(columnas[0])==str:
+        if columnas[0].lower()=='todas':
+            columnasN = [x for x in range(tabla.shape[1])]
+
     #si es no tabla no hay sumas y necesita tratamiento especial
     if tipotabla == 'NT_Desagregados':
         lista = []
@@ -773,42 +779,75 @@ def extraer_lista(tabla,filas,columnas,suma,tipotabla):
         return lista
     #comprobar si hay algo que se deba sumar
     if suma:
-        inicio = suma[0]-1
-        fin = suma[1] #a este no se le quita uno porque como se va a un range, en realidad se toma el penultimo valor entonces ahí se hace la resta automáticamente. Ejemplo, si es 8, llegaría hasta el 7 la iteracion
-        ldl = []
-        res_s = []
-        for i in range(inicio,fin):
-            lis = list(tabla.iloc[i,columnas])
-            ldl.append(lis)
-        c = 0
-        for val in ldl[0]:#por valor en la primera lista
-            agregar = val
-            na = 0
-            ns = 0
-            if type(val) == str:#por si son na o ns
-                vv = val.lower()
-                if vv=='na':
-                    na = 1
-                if vv=='ns':
-                    ns = 1
-                agregar = 0
-            for lis in ldl[1:]:#iterar resto de listas para sacar sus valores respectivos y sumarlos
-                if type(lis[c])==str:
-                    vv = lis.lower()
+        if suma[0] != 'C': #se trata de sumas de filas
+            inicio = suma[0]-1
+            fin = suma[1] #a este no se le quita uno porque como se va a un range, en realidad se toma el penultimo valor entonces ahí se hace la resta automáticamente. Ejemplo, si es 8, llegaría hasta el 7 la iteracion
+            ldl = []
+            res_s = []
+            for i in range(inicio,fin):
+                lis = list(tabla.iloc[i,columnasN])
+                ldl.append(lis)
+            c = 0
+            for val in ldl[0]:#por valor en la primera lista
+                agregar = val
+                na = 0
+                ns = 0
+                if type(val) == str:#por si son na o ns
+                    vv = val.lower()
                     if vv=='na':
                         na = 1
                     if vv=='ns':
-                        ns = 1 
-                else:#es int o float
-                    agregar += lis[c]
-            if agregar == 0 and na > 0:
-                res_s.append('NA')
-            if agregar == 0 and ns > 0:
-                res_s.append('NS')
-            if agregar > 0:
-                res_s.append(agregar)
-            c += 1
-        lista.append(res_s)
+                        ns = 1
+                    agregar = 0
+                for lis in ldl[1:]:#iterar resto de listas para sacar sus valores respectivos y sumarlos
+                    if type(lis[c])==str:
+                        vv = lis.lower()
+                        if vv=='na':
+                            na = 1
+                        if vv=='ns':
+                            ns = 1 
+                    else:#es int o float
+                        agregar += lis[c]
+                if agregar == 0 and na > 0:
+                    res_s.append('NA')
+                if agregar == 0 and ns > 0:
+                    res_s.append('NS')
+                if agregar > 0:
+                    res_s.append(agregar)
+                c += 1
+            lista.append(res_s)
+            
+        else:#para sumas de columnas
+            res_s = []
+            if type(filasN) == str:
+                filasN = [x for x in range(tabla.shape[0])]
+            for fila in filasN:
+                lis = list(tabla.iloc[fila,columnasN])
+                try:#si son ppuros numeros es sum directa
+                    agregar = sum(lis)
+                    res_s.append(agregar)
+                except:# si hay string hay que comprobar ns y na
+                    agregar = 0
+                    for val in lis:
+                        na = 0
+                        ns = 0
+                        if type(val) == str:#por si son na o ns
+                            vv = val.lower()
+                            if vv=='na':
+                                na = 1
+                            if vv=='ns':
+                                ns = 1
+                        else:
+                            agregar += val
+                            
+                    if agregar == 0 and na > 0:
+                        res_s.append('NA')
+                    if agregar == 0 and ns > 0:
+                        res_s.append('NS')
+                    if agregar >= 0 and na==0 and ns==0:
+                        res_s.append(agregar)
+
+                lista.append(res_s)
     
     else:
         if type(filasN)==str:
@@ -817,7 +856,7 @@ def extraer_lista(tabla,filas,columnas,suma,tipotabla):
         else:
             for fila in filasN:
                 lista.append(list(tabla.iloc[fila,columnasN]))
-            
+           
     return lista
 
 def analizar_tex_instr(t1,t2,tx,encabezadoA,encabezadoC):
@@ -2031,7 +2070,8 @@ def evaluador_suma(lista,indi):
         if type(total) != str:
             # print('llega',total,suma)
             if total != suma:
-                if total != 0 and suma >= 0:
+                if total != 0 and suma >= 0 and ns == 'No':
+                    
                     errores.append(f'Error: Suma de desagregados no coincide con el total en {indi}(Total = {total}vs Suma de desagregados = {suma})')
                 if total == 0 and ns == 'Si':
                     errores.append(f'Si el total es cero, ningún desagregado puede ser NS en {indi}')
