@@ -15,7 +15,7 @@ class aplicacion(tk.Frame):
         super().__init__(master)
         self.master = master
         self.master.title('Prueba')
-        self.master.geometry('900x600')
+        self.master.geometry('400x300')
         self.pack() 
         self.cues = cues
         self.lista, self.base = self.consg_p(cues,base)
@@ -729,6 +729,19 @@ class aplicacion(tk.Frame):
         boton1.pack()
         boton2 = tk.Button(self.vv1, text ="No", command = self.no_sumanum)
         boton2.pack()
+        #desplegar tablas de pregunta actual--
+        ob_pre = self.bp(self,self.lista[self.cont])
+        for tabla in ob_pre.tablas:
+            self.NV1 = tk.Toplevel(self)
+            self.NV1.title('Contenido de pregunta actual '+self.lista[self.cont])
+            barra = tk.Scrollbar(self.NV1,orient='horizontal')
+            barra.pack(side=tk.BOTTOM, fill=tk.X)
+            tab = tk.Text(self.NV1,xscrollcommand=barra.set,wrap=tk.NONE)#,width=100
+            tt = ob_pre.tablas[tabla].set_axis([str(x) for x in range(1,ob_pre.tablas[tabla].shape[1]+1)],axis=1)#nombres de columnas
+            tt = tt.set_axis([x for x in range(1,tt.shape[0]+1)])#nombres de filas
+            tab.insert(tk.INSERT, tt.to_string())
+            barra.config(command=tab.xview)
+            tab.pack()
         
     def si_sumanum(self):
         self.base['s_num_lis'][self.cont].append([int(self.inicio_suma.get())-1,int(self.fin_suma.get())-1])

@@ -59,6 +59,7 @@ if os.path.exists('veamos.csv'):
     list_erro = errores(cuestionario,libro,indicaciones)
     
 else:
+    os.system(f"start EXCEL.EXE {libro}")
     crear_base = recibir(cuestionario,libro)
 #aquí tendrá que haber una division para revision o para crear archivo de revision
 # list_erro = errores(cuestionario,libro)
