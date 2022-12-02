@@ -630,7 +630,8 @@ class aplicacion(tk.Frame):
                 recolector['suma_numeral_ref'] = ['C']
                 
         if not self.comparar:#si se cumple esto entonces viene de funcion iterar sin instrucciones
-            recolector['pregunta_ref'] = self.op_p_r5.get()
+            nombre_pregunta = self.op_p_r5.get()
+            recolector['pregunta_ref'] = nombre_pregunta[:-2]#para quitar punto y guion
             #convertir valor de operacion a numero porque esta en string
             op = self.op_p_r.get()
             if op == 'Igual':

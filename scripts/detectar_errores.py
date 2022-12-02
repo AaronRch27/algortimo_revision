@@ -35,7 +35,8 @@ def errores(cuestionario,nombre,indica):
     #dado que se harán validaciones respecto a indica, no hace falta depurar errores
     #depurar
     # errores = depurar(errores)
-
+    nombre = nombre.split('/')
+    nombre = nombre[-1]
     generar_formato(errores, censo, nombre)
     # print(errores)
     return errores
