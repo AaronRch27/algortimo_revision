@@ -44,8 +44,8 @@ def ruta():
     modelos = [modelo1, vector1]
 
 
-
-    pags = pd.ExcelFile(libro).sheet_names
+    guide = pd.ExcelFile(libro)
+    pags = guide.sheet_names
 
     saltar = [
         'Índice',
@@ -78,6 +78,7 @@ def ruta():
         os.system(f"start EXCEL.EXE {abrir}")
         ventana.destroy()
         crear_base = recibir(cuestionario,libro)
+    guide.close()
         
 boton1 = tk.Button(ventana, text ="Iniciar", command = ruta)
 boton1.pack()

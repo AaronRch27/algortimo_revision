@@ -1,0 +1,4 @@
+2.6 se sistema penitenciario M1 comparacion entre preguntas necesita
+mayor amplitud de seleccion 
+2.16 no sirve al darle en siguiente comparación
+2.17 meter una forma de iteracion 

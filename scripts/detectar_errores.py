@@ -1581,10 +1581,10 @@ def sinonosabe(df1,autosuma,tipo):
         no_aplica = []
         c = 0
         for columna in df:
-            if 'No aplica' in str(columna):
+            if 'No aplica' in str(columna) or 'No se realizaron acciones formativas' in str(columna):
                 no_aplica.append(c)
             texto = str(columna).replace(' ','')#quitar espacios porque luego no lo escriben igual siempre
-            comparar = '1.Sí/2.'
+            comparar = '1.Sí/'
             if comparar in texto:
                 separar.append(c)
             c += 1
@@ -1594,13 +1594,21 @@ def sinonosabe(df1,autosuma,tipo):
                 nf = 0
                 for fila in indices:
                     if fila != 'borra':
-                        fila_comp = list(df1.iloc[nf,1:]) #con esto ya se tiene la fila sin el index
-                        
-                        if 'borra' in fila_comp:
-                            if 'blanco' in errores:
-                                errores['blanco'].append(f'Fila {nf+1} tiene espacios en blanco')
-                            if 'blanco' not in errores:
-                                errores['blanco'] = [f'Fila {nf+1} tiene espacios en blanco']
+                        #comprobacion adiiconal para filas que no tienen contenido
+                        filan1 = str(fila)
+                        filan1 = filan1.split(' ')
+                        no_vacio = 0
+                        for elem in filan1[1:]: #itera del elemento uno en adelante porque usualmente el elemento cero es un numero, en cuyo caso y aunque fuese borra, ese no interesa para descartar
+                            if elem != 'borra':
+                                no_vacio += 1
+                        if no_vacio:
+                            fila_comp = list(df1.iloc[nf,1:]) #con esto ya se tiene la fila sin el index
+                            
+                            if 'borra' in fila_comp:
+                                if 'blanco' in errores:
+                                    errores['blanco'].append(f'Fila {nf+1} tiene espacios en blanco')
+                                if 'blanco' not in errores:
+                                    errores['blanco'] = [f'Fila {nf+1} tiene espacios en blanco']
                     nf +=1 
             return errores
         
