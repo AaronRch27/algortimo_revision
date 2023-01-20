@@ -780,6 +780,7 @@ def extraer_lista(tabla,filas,columnas,suma,tipotabla):
         return lista
     #comprobar si hay algo que se deba sumar
     if suma:
+        
         if suma[0] != 'C': #se trata de sumas de filas
             inicio = suma[0]-1
             fin = suma[1] #a este no se le quita uno porque como se va a un range, en realidad se toma el penultimo valor entonces ahí se hace la resta automáticamente. Ejemplo, si es 8, llegaría hasta el 7 la iteracion
@@ -813,10 +814,11 @@ def extraer_lista(tabla,filas,columnas,suma,tipotabla):
                     res_s.append('NA')
                 if agregar == 0 and ns > 0:
                     res_s.append('NS')
-                if agregar > 0:
+                if agregar >= 0 and na == 0 and ns == 0:
                     res_s.append(agregar)
                 c += 1
             lista.append(res_s)
+            # print(lista,ldl)
             
         else:#para sumas de columnas
             res_s = []

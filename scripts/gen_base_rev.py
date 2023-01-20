@@ -231,7 +231,8 @@ class aplicacion(tk.Frame):
         self.ins_cons = [] #instrucciones de consistencia
         for instruc in clasificadas:
             if clasificadas[instruc] == 'consistencia':
-                self.ins_cons.append(instruc)
+                if 'igual' in instruc: #comprobacion adicional por si el modelo clasificó mal alguna instruccion
+                    self.ins_cons.append(instruc)
         
         if self.ins_cons:
             self.segundo_contador = 0 
@@ -611,7 +612,17 @@ class aplicacion(tk.Frame):
         recolector = {}
         if self.comparar:#si hay esta variable es porque fue en funcion de iterar instrucciones
             recolector['pregunta_ref'] = self.comparar
-            recolector['operacion'] = self.op_p_r
+            if type(self.op_p_r) == int:
+                recolector['operacion'] = self.op_p_r
+            if type(self.op_p_r) != int:
+                op = self.op_p_r.get()
+                if op == 'Igual':
+                    a = 1
+                if op == 'Menor o igual':
+                    a = 2
+                if op == 'Mayor o igual':
+                    a = 3
+                recolector['operacion'] = a
             recolector['filas_act'] = [self.filas_pact.get()]
             recolector['columnas_act'] = [self.columnas_pact.get()]
             if self.op_p_r2.get()=='Filas':
@@ -623,7 +634,7 @@ class aplicacion(tk.Frame):
             recolector['filas_ref'] = [self.filas_pref.get()]
             recolector['columnas_ref'] = [self.columnas_pref.get()]
             if self.op_p_r3.get()=='Filas':
-                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get(),self.fin_suma_pref.get()]
+                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get()+','+self.fin_suma_pref.get()]
             if self.op_p_r3.get()=='No':
                 recolector['suma_numeral_ref'] = []
             if self.op_p_r3.get()=='Columnas':
@@ -649,13 +660,20 @@ class aplicacion(tk.Frame):
                 recolector['suma_numeral_act'] = []
             recolector['filas_ref'] = [self.filas_pref.get()]
             recolector['columnas_ref'] = [self.columnas_pref.get()]
-            if self.op_p_r3.get()=='Sí':
-                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get(),self.fin_suma_pref.get()]
+            # if self.op_p_r3.get()=='Sí':
+            #     recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get(),self.fin_suma_pref.get()]
+            # if self.op_p_r3.get()=='No':
+            #     recolector['suma_numeral_ref'] = []
+            if self.op_p_r3.get()=='Filas':
+                recolector['suma_numeral_ref'] = [self.inicio_suma_pref.get()+','+self.fin_suma_pref.get()]
             if self.op_p_r3.get()=='No':
                 recolector['suma_numeral_ref'] = []
+            if self.op_p_r3.get()=='Columnas':
+                recolector['suma_numeral_ref'] = ['C']
+            
                 
         self.preg_rel_var.append(recolector)
-            
+        self.w11.destroy()    
         #Se avanza a otra instrucción
         if self.ins_cons:
             if self.segundo_contador+1<len(self.ins_cons):
