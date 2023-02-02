@@ -677,6 +677,7 @@ def consistencia(cuestionario,pregunta,datos):
     for comparacion in datos:
         # if comparacion['pregunta_ref'][0].isdigit():
         #     comparacion['pregunta_ref'] += '.-'
+        # print(comparacion)  #excelente para el debug
         for k in comparacion:
             if type(comparacion[k])==list:
                 
@@ -1182,7 +1183,7 @@ def NS(p_actual,p_comp):
     n = ['NS','ns']
     a = ['NA','na']
     br = ['borra']
-
+    # print(referente,comparador) #borra y cero respectivamete 1.63
     if referente == comparador:
         return 0
     if referente in br and comparador in br:
@@ -1198,6 +1199,8 @@ def NS(p_actual,p_comp):
     if referente == 0 and comparador in n:
         return 1
     if referente in n and comparador >= 0:
+        return 1
+    if referente in br and comparador == 0: #error más nuevo donde pregunta referente no tienen nada por instruccion y en pregunta actual tiene cero, seguramente por instrucción debe ir en blanco
         return 1
     if referente > 0 and comparador in n:
         return 0
@@ -2076,6 +2079,9 @@ def evaluador_suma(lista,indi):
             if total.lower() == 'na' and ns == 'Si':
                 errores.append(f'Error: Si el total es NA ninguno de sus desagregados puede ser NS para {indi}')
         if type(total) == str and total not in convertir and not no_err:
+            if total == 'borra':
+                errores.append(f'Error: el total es un espacio vacío y sus desagregados contienen algo distinto a un espacio vacío como respuesta en {indi}')
+                return errores
             errores.append(f'Error: el total es un valor no permitido como respuesta en {indi}')
             return errores
         if type(total) != str:

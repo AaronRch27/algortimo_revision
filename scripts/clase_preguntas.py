@@ -608,6 +608,18 @@ class clase_pregunta():
                 cn += 1
             if 'Código1' in val:
                 val.pop('Código1') #borrar porque esta columna es un error
+            #dado que es tabla de indices, procedimiento adicional para borrar columnas de indices que se repiten en tablas por partes
+            c = 0
+            borrar = []
+            for k in val:
+                if c == 0:
+                    indices = k #porque el primero si o si es indice
+                if c > 0:
+                    if indices in k:
+                        borrar.append(k)
+                c += 1
+            for elm in borrar:
+                val.pop(elm)
             nuevo_df = pd.DataFrame(val)
         # print(comprobador,'com')        
         if Revisar == 0: #tabla de filas unicas
