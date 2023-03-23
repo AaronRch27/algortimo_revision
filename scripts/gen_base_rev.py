@@ -11,7 +11,7 @@ from tkinter import IntVar, StringVar, messagebox, Checkbutton, ttk
 
 #se hará una app para guiar el proceso de validaciones necesarias para cada pregunta
 class aplicacion(tk.Frame):
-    def __init__(self,base,cues,master=None):
+    def __init__(self,base,cues,nombre_c,master=None):
         super().__init__(master)
         self.master = master
         self.master.title('Prueba')
@@ -21,6 +21,7 @@ class aplicacion(tk.Frame):
         self.lista, self.base = self.consg_p(cues,base)
         self.cont = 0
         self.rec(self.lista[self.cont])
+        self.nombre_compuesto = nombre_c
         
         
     @staticmethod
@@ -217,7 +218,7 @@ class aplicacion(tk.Frame):
             copia['salto_preguntas'][self.cont] = self.salto.get()
             copia['preguntas_relacionadas'][self.cont] = self.p_rel1.get()
             self.base=pd.DataFrame(copia)
-            self.base.to_csv('veamos.csv',index=False)
+            self.base.to_csv(f'Recursos/{self.nombre_compuesto}.csv',index=False)
             #cambiar pregunta
             self.cont += 1
             if self.cont > len(self.lista)-1:
@@ -822,7 +823,7 @@ def recibir(cuestionario,libro):
     # lista_preguntas = consg_p(cuestionario)
     # base['preguntas'] = lista_preguntas
     ventana = tk.Tk()
-    clase = aplicacion(base,cuestionario,master=ventana)
+    clase = aplicacion(base,cuestionario,libro,master=ventana)
     clase.mainloop()
     
     return

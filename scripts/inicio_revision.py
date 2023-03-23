@@ -12,16 +12,17 @@ import joblib
 from gen_base_rev import recibir
 import os
 
+
 #No olvidar marcar los complementos con el inicio de su pregunta y un ## donde termina
 
 
-# libro = 'CNDHF_2022_M1_R3.xlsx'
-libro = 'pregunta_prueba.xlsx'
+libro = '02_CNSIPEF_2023_M2_.xlsx'
+# libro = 'pregunta_prueba.xlsx'
 
 #Estos modelos solo funcionan si se cargan desde el main, es decir, este script kjunto con tokenizar,clasificadorBayes 
-modelo1 = joblib.load('modelo_primer_filtro.sav')
+modelo1 = joblib.load('Recursos/modelo_primer_filtro.sav')
 
-vector1 = joblib.load('vectorizador_fil.sav')
+vector1 = joblib.load('Recursos/vectorizador_fil.sav')
 
 # modelo2 = joblib.load('modelo_segundo_filtro.sav')
 
@@ -51,16 +52,43 @@ for pag in pags:
                              na_values=[''], keep_default_na=False)
         seccion = procesar(data, pag,modelos)
         cuestionario[pag] = seccion
+#identificar censo, módulo y si fuese el caso, sección:
+nombre = libro #nombre del cuestionario con punto xlsx
+censos = ['CNIJF','CNDHF','CNSPF','CNSIPEF','CNGF','CNPJF']  
+identificador = {'censo':'','modulo':'','seccion':''}
+for censo in censos:
+    if censo in nombre:
+        identificador['censo'] = censo
+        break
+c = 0
+for letra in nombre:
+    if letra == 'M':
+        try:
+            if nombre[c+1].isdigit():
+                identificador['modulo'] = nombre[c+1]
+        except:
+            pass
+    if letra == 'S':
+        try:
+            if nombre[c+1].isdigit():
+                identificador['seccion'] = nombre[c+1]
+        except:
+            pass
+    c += 1
+
+nombre_compuesto = f"validaciones_{identificador['censo']}_M{identificador['modulo']}_S{identificador['seccion']}"
+if identificador['censo'] == '':
+    nombre_compuesto = 'veamos' #porque es de pruebas ya que no pertenece a cuestionario
         
 #identificar si ya existe base de datos con validaciones a ejecutar
-if os.path.exists('veamos.csv'):
-    indicaciones = pd.read_csv('veamos.csv')
+if os.path.exists(f"Recursos/{nombre_compuesto}.csv"):
+    indicaciones = pd.read_csv(f"Recursos/{nombre_compuesto}.csv")
     #en caso de que ya exista se corre directamente la comprobación
     list_erro = errores(cuestionario,libro,indicaciones)
     
 else:
     os.system(f"start EXCEL.EXE {libro}")
-    crear_base = recibir(cuestionario,libro)
+    crear_base = recibir(cuestionario,nombre_compuesto)
 #aquí tendrá que haber una division para revision o para crear archivo de revision
 # list_erro = errores(cuestionario,libro)
 

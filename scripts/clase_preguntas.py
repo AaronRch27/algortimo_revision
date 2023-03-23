@@ -615,7 +615,7 @@ class clase_pregunta():
                 if c == 0:
                     indices = k #porque el primero si o si es indice
                 if c > 0:
-                    if indices in k:
+                    if indices in k or 'Tipo de delito1' in k:
                         borrar.append(k)
                 c += 1
             for elm in borrar:

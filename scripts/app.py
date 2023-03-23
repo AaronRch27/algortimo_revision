@@ -33,9 +33,9 @@ def ruta():
     camino = cam #toda la ruta del archivo pero sin el nombre del archivo
     # libro = libro.split('/')
     # libro = libro[-1]
-    modelo1 = joblib.load('modelo_primer_filtro.sav')
+    modelo1 = joblib.load('Recursos/modelo_primer_filtro.sav')
 
-    vector1 = joblib.load('vectorizador_fil.sav')
+    vector1 = joblib.load('Recursos/vectorizador_fil.sav')
 
     # modelo2 = joblib.load('modelo_segundo_filtro.sav')
 
@@ -65,19 +65,45 @@ def ruta():
                                  na_values=[''], keep_default_na=False)
             seccion = procesar(data, pag,modelos)
             cuestionario[pag] = seccion
-            
+    #identificar censo, módulo y si fuese el caso, sección:
+    abrir = libro.split('/')
+    abrir = abrir[-1]
+    nombre = abrir #nombre del cuestionario con punto xlsx
+    censos = ['CNIJF','CNDHF','CNSPF','CNSIPEF','CNGF','CNPJF']  
+    identificador = {'censo':'','modulo':'','seccion':''}
+    for censo in censos:
+        if censo in nombre:
+            identificador['censo'] = censo
+            break
+    c = 0
+    for letra in nombre:
+        if letra == 'M':
+            try:
+                if nombre[c+1].isdigit():
+                    identificador['modulo'] = nombre[c+1]
+            except:
+                pass
+        if letra == 'S':
+            try:
+                if nombre[c+1].isdigit():
+                    identificador['seccion'] = nombre[c+1]
+            except:
+                pass
+        c += 1
+    nombre_compuesto = f"validaciones_{identificador['censo']}_M{identificador['modulo']}_S{identificador['seccion']}"
+    if identificador['censo'] == '':
+        nombre_compuesto = 'veamos' #porque es de pruebas ya que no pertenece a cuestionario
+                    
     #identificar si ya existe base de datos con validaciones a ejecutar
-    if os.path.exists(camino+'veamos.csv'):
-        indicaciones = pd.read_csv(camino+'veamos.csv')
+    if os.path.exists(f"Recursos/{nombre_compuesto}.csv"):#quita la ruta de variable camino porque no se necesita ya que es en el mismo directorio donde se ejecuta
+        indicaciones = pd.read_csv(f"Recursos/{nombre_compuesto}.csv")
         #en caso de que ya exista se corre directamente la comprobación
         list_erro = errores(cuestionario,libro,indicaciones)
         ventana.destroy()
     else:
-        abrir = libro.split('/')
-        abrir = abrir[-1]
         os.system(f"start EXCEL.EXE {abrir}")
         ventana.destroy()
-        crear_base = recibir(cuestionario,libro)
+        crear_base = recibir(cuestionario,nombre_compuesto)
     guide.close()
         
 boton1 = tk.Button(ventana, text ="Iniciar", command = ruta)

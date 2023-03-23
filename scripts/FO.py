@@ -29,7 +29,7 @@ def generar_formato(errores,censo,nombre):
     None.
 
     """
-    formato = 'FO_2022.xlsx'#path del formato de observaciones en blanco
+    formato = 'Recursos/FO_2022.xlsx'#path del formato de observaciones en blanco
 
     libro = op.load_workbook(formato)
     

@@ -501,7 +501,7 @@ def val_delitos(df,context,ntabla):
                 contador += 1
                 break
     if contador > 5:#es porque se trata de la tabla buscada
-        referente = pd.read_csv('tipo_victima.csv')
+        referente = pd.read_csv('Recursos/tipo_victima.csv')
         nfr = context.tablas[ntabla].copy()
         nfr_n = list(nfr.columns)
         borr = ['Bien jurídico', 'Tipo de delito', 'Total']
